@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
-page=1
+page=3
 
 year="2024"
-month="04"
-day="26"
+month="05"
+day="31"
 date="$month-$day"
 
-estatement_date="05-21"
+estatement_date="06-07"
 
-pdftk eStatement_"$year"-"$estatement_date".pdf cat 1 output "$date"/CreditCard.pdf
-pdftoppm -jpeg $date/CreditCard.pdf $date/Creditcard
-rm $date/CreditCard.pdf
-mv $date/CreditCard-1.jpg $date/CreditCard.jpg
+pdftk eStatement_"$year"-"$estatement_date".pdf cat "$page" output "$date"/creditcard.pdf
+pdftoppm -jpeg $date/creditcard.pdf $date/creditcard
+rm $date/creditcard.pdf
+mv $date/creditcard-1.jpg $date/creditcard.jpg
