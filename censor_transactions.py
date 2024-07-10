@@ -1,20 +1,36 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk, ImageDraw
+import os
+import sys
 
 class ImageViewer:
     def __init__(self, master, image_path):
         self.master = master
         self.master.title("Image Viewer")
 
+        self.image_path = image_path
+
         # Load the image
         self.original_image = Image.open(image_path)
         self.working_image = self.original_image.copy()
         self.image = ImageTk.PhotoImage(self.working_image)
 
+        # Create frame for canvas and scrollbars
+        self.frame = ttk.Frame(self.master)
+        self.frame.pack(fill=tk.BOTH, expand=True)
+
         # Create canvas
-        self.canvas = tk.Canvas(self.master, width=800, height=600)
-        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas = tk.Canvas(self.frame, width=800, height=600)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # Add scrollbars
+        self.v_scrollbar = ttk.Scrollbar(self.frame, orient=tk.VERTICAL, command=self.canvas.yview)
+        self.v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.h_scrollbar = ttk.Scrollbar(self.master, orient=tk.HORIZONTAL, command=self.canvas.xview)
+        self.h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        self.canvas.configure(yscrollcommand=self.v_scrollbar.set, xscrollcommand=self.h_scrollbar.set)
 
         # Display image on canvas
         self.image_on_canvas = self.canvas.create_image(0, 0, anchor=tk.NW, image=self.image)
@@ -23,6 +39,7 @@ class ImageViewer:
         self.zoom_factor = 1.0
         self.min_zoom = 0.1
         self.max_zoom = 5.0
+        self.previous_zoom_factor = 1.0
 
         # Rectangle variables
         self.start_x = None
@@ -36,6 +53,8 @@ class ImageViewer:
         self.canvas.bind("<ButtonRelease-1>", self.on_release)
         self.canvas.bind("<MouseWheel>", self.on_mousewheel)
         self.master.bind("<Control-MouseWheel>", self.on_ctrl_mousewheel)
+        self.master.bind("<Control-z>", self.undo_last_rectangle)
+        self.master.bind("<Control-s>", self.save_image)
 
         # Create buttons
         self.create_buttons()
@@ -49,6 +68,9 @@ class ImageViewer:
 
         undo_button = ttk.Button(button_frame, text="Undo", command=self.undo_last_rectangle)
         undo_button.pack(side=tk.LEFT, padx=5, pady=5)
+
+        save_button = ttk.Button(button_frame, text="Save", command=self.save_image)
+        save_button.pack(side=tk.LEFT, padx=5, pady=5)
 
         exit_button = ttk.Button(button_frame, text="Exit", command=self.master.quit)
         exit_button.pack(side=tk.RIGHT, padx=5, pady=5)
@@ -87,7 +109,6 @@ class ImageViewer:
         self.rect = None
 
     def add_black_rectangle(self, x1, y1, x2, y2):
-        # Convert canvas coordinates to image coordinates
         x1, y1 = self.canvas_to_image(x1, y1)
         x2, y2 = self.canvas_to_image(x2, y2)
         
@@ -96,7 +117,7 @@ class ImageViewer:
         self.rectangles.append((x1, y1, x2, y2))
         self.update_image()
 
-    def undo_last_rectangle(self):
+    def undo_last_rectangle(self, event=None):
         if self.rectangles:
             self.rectangles.pop()
             self.working_image = self.original_image.copy()
@@ -108,9 +129,7 @@ class ImageViewer:
     def on_mousewheel(self, event):
         x = self.canvas.canvasx(event.x)
         y = self.canvas.canvasy(event.y)
-        # For Windows and MacOS
         delta = event.delta
-        # For Linux
         if event.num == 5:
             delta = -1
         elif event.num == 4:
@@ -144,7 +163,6 @@ class ImageViewer:
         if focus_x is None or focus_y is None:
             self.canvas.coords(self.image_on_canvas, 0, 0)
         else:
-            # Calculate new position to keep the focus point stationary
             current_x, current_y = self.canvas.coords(self.image_on_canvas)
             delta_x = (focus_x - current_x) * (1 - self.zoom_factor / self.previous_zoom_factor)
             delta_y = (focus_y - current_y) * (1 - self.zoom_factor / self.previous_zoom_factor)
@@ -157,13 +175,23 @@ class ImageViewer:
         self.previous_zoom_factor = self.zoom_factor
 
     def canvas_to_image(self, x, y):
-        # Convert canvas coordinates to image coordinates
         canvas_x, canvas_y = self.canvas.coords(self.image_on_canvas)
         image_x = int((x - canvas_x) / self.zoom_factor)
         image_y = int((y - canvas_y) / self.zoom_factor)
         return image_x, image_y
 
+    def save_image(self, event=None):
+        file_name, file_extension = os.path.splitext(self.image_path)
+        output_path = f"{file_name}-censored{file_extension}"
+        self.working_image.save(output_path)
+        print(f"Image saved as: {output_path}")
+
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python script_name.py <path_to_image>")
+        sys.exit(1)
+    
+    image_path = sys.argv[1]
     root = tk.Tk()
-    app = ImageViewer(root, "05-31/creditcard.jpg")
+    app = ImageViewer(root, image_path)
     root.mainloop()
