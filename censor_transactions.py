@@ -35,7 +35,7 @@ class ImageViewer:
         self.canvas.bind("<B1-Motion>", self.on_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_release)
         self.canvas.bind("<MouseWheel>", self.on_mousewheel)
-        self.canvas.bind("<Control-MouseWheel>", self.on_ctrl_mousewheel)
+        self.master.bind("<Control-MouseWheel>", self.on_ctrl_mousewheel)
 
         # Create buttons
         self.create_buttons()
@@ -108,13 +108,22 @@ class ImageViewer:
     def on_mousewheel(self, event):
         x = self.canvas.canvasx(event.x)
         y = self.canvas.canvasy(event.y)
-        if event.delta > 0:
-            self.zoom_factor *= 1.1
+        # For Windows and MacOS
+        delta = event.delta
+        # For Linux
+        if event.num == 5:
+            delta = -1
+        elif event.num == 4:
+            delta = 1
         else:
-            self.zoom_factor /= 1.1
-        self.zoom_factor = max(self.min_zoom, min(self.max_zoom, self.zoom_factor))
-        self.zoom_bar.set(self.zoom_factor)
-        self.update_image(x, y)
+            delta /= 120
+        
+        zoom_delta = 1.1 ** delta
+        new_zoom = self.zoom_factor * zoom_delta
+        if self.min_zoom <= new_zoom <= self.max_zoom:
+            self.zoom_factor = new_zoom
+            self.zoom_bar.set(self.zoom_factor)
+            self.update_image(x, y)
 
     def on_ctrl_mousewheel(self, event):
         if event.state & 0x4:  # Check if Ctrl key is pressed
@@ -137,14 +146,15 @@ class ImageViewer:
         else:
             # Calculate new position to keep the focus point stationary
             current_x, current_y = self.canvas.coords(self.image_on_canvas)
-            delta_x = (focus_x - current_x) * (1 - self.zoom_factor / self.canvas.get_zoom_factor())
-            delta_y = (focus_y - current_y) * (1 - self.zoom_factor / self.canvas.get_zoom_factor())
+            delta_x = (focus_x - current_x) * (1 - self.zoom_factor / self.previous_zoom_factor)
+            delta_y = (focus_y - current_y) * (1 - self.zoom_factor / self.previous_zoom_factor)
             new_x = current_x - delta_x
             new_y = current_y - delta_y
             self.canvas.coords(self.image_on_canvas, new_x, new_y)
         
         self.canvas.itemconfig(self.image_on_canvas, image=self.image)
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        self.previous_zoom_factor = self.zoom_factor
 
     def canvas_to_image(self, x, y):
         # Convert canvas coordinates to image coordinates
@@ -152,9 +162,6 @@ class ImageViewer:
         image_x = int((x - canvas_x) / self.zoom_factor)
         image_y = int((y - canvas_y) / self.zoom_factor)
         return image_x, image_y
-
-    def get_zoom_factor(self):
-        return self.zoom_factor
 
 if __name__ == "__main__":
     root = tk.Tk()
