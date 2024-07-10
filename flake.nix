@@ -19,6 +19,7 @@
       {
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
+			pdfgrep
             (python3.withPackages (ps: with ps; [
               tkinter
               pillow
