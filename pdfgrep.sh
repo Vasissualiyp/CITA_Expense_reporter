@@ -93,7 +93,7 @@ find_first_date_after() {
     local input_date="${month}${day}"
 
     # Initialize a variable to hold the closest date
-    local closest_date=""
+    closest_date=""
 
     # Loop through each directory in the specified directory
     for dir in "$directory"/*/; do
@@ -119,32 +119,39 @@ find_first_date_after() {
     # Format the closest date back to MM-DD
     if [ -n "$closest_date" ]; then
         closest_date="${closest_date:0:2}-${closest_date:2:2}"
-        echo "$closest_date"
     else
         echo "No date found after the given date."
+		exit 1
     fi
 }
 
 
 # Main script
 if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <ESTATEMENTS_DIRECTORY> <SEARCH_STRING> <FINAL_DIRECTORY>"
+    echo "Usage: $0 <ESTATEMENTS_DIRECTORY> <SEARCH_STRING> <EXPENSE_REPORTS_DIRECTORY>"
     exit 1
 fi
 
-directory="$1"
+estatements_directory="$1"
 search_string="$2"
-final_directory="$3"
+expense_reports_directory="$3"
 year=2024
 
 check_pdfgrep
-scan_pdfs "$directory" "$search_string"
+scan_pdfs "$estatements_directory" "$search_string"
 present_results
 prompt_user_selection
 extract_date_info
 
-# Print the results
+# Print the transaction info
 echo "Selected occurrence found in file '$selected_file' on page $selected_page."
 echo "Month: $selected_month, Day: $selected_day"
 
-find_first_date_after "$year" "$selected_month" "$selected_day" "$final_directory"
+# Get the first cosmolunch that happened after the transaction happened
+find_first_date_after "$year" "$selected_month" "$selected_day" "$expense_reports_directory"
+echo "Date of cosmolunch: $closest_date"
+
+# Now copy the transaction page to the expense reports directory
+output_dir="$expense_reports_directory/$closest_date/creditcard"
+mkdir "$output_dir"
+pdftk "$selected_file" cat "$selected_page" output "$output_dir/1.pdf"
