@@ -180,4 +180,8 @@ mkdir "$output_dir"
 pdftk "$selected_file" cat "$selected_page" output "$output_dir/1.pdf" 1> /dev/null 2> /dev/null
 convert_pdfs_to_jpegs "$output_dir" 1> /dev/null 2> /dev/null
 rm -rf "$output_dir/*.pdf"
+echo ""
+echo ""
+echo "Now you have to only enable transaction for ${selected_month}-${selected_day}:"
 python censor_transactions.py "$output_dir/1.jpg"
+rm -rf "$output_dir/[0-9].pdf" "$output_dir/[0-9].jpg"
