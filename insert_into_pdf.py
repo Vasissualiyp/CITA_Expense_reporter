@@ -3,46 +3,44 @@ from reportlab.pdfgen import canvas
 import PyPDF2
 import io
 
-def insert_text_to_pdf(input_pdf_path, output_pdf_path, text, x, y, font_name="Helvetica", font_size=12, scale_x=1, scale_y=1):
-    # Read the existing PDF to determine the page size
+def insert_multiple_texts_to_pdf(input_pdf_path, output_pdf_path, texts):
+    # Open the existing PDF
     existing_pdf = PyPDF2.PdfReader(open(input_pdf_path, "rb"))
-    output = PyPDF2.PdfWriter()
+    output_pdf = PyPDF2.PdfWriter()
 
-    for page in existing_pdf.pages:
-        # Determine page dimensions
-        page_width = page.mediabox.upper_right[0]
-        page_height = page.mediabox.upper_right[1]
+    # Create a single PDF in memory to overlay text on all pages
+    packet = io.BytesIO()
+    can = canvas.Canvas(packet)
 
-        # Rotate the page for proper text orientation (if necessary)
-        page.rotate(270)  # Rotate page to horizontal for text insertion
+    # Add each text to the overlay PDF
+    for text_details in texts:
+        x, y, text, font_name, font_size = text_details
+        can.setFont(font_name, font_size)
+        can.drawString(x, y, text)
 
-        # Create a new PDF to overlay text
-        packet = io.BytesIO()
-        can = canvas.Canvas(packet, pagesize=(page_width, page_height))
-        can.saveState()  # Save the current state before making changes
-        can.translate(x, y)
-        can.rotate(90)  # Rotate text to match page orientation
-        can.setFont(font_name, font_size)  # Set the font and size for the text
-        can.scale(scale_x, scale_y)  # Apply scaling transformation
-        can.drawString(0, 0, text)  # Draw the text at the new origin
-        can.restoreState()  # Restore the canvas state
-        can.save()
+    can.save()
 
-        # Move to the beginning of the StringIO buffer
-        packet.seek(0)
-        new_pdf = PyPDF2.PdfReader(packet)
+    # Move to the beginning of the StringIO buffer and create a PDF reader
+    packet.seek(0)
+    overlay_pdf = PyPDF2.PdfReader(packet)
 
-        # Merge the text overlay onto the rotated page
-        page.merge_page(new_pdf.pages[0])
-        page.rotate(90)  # Rotate the page back to its original orientation
+    # Iterate over each page in the original PDF and merge the overlay
+    for page_number in range(len(existing_pdf.pages)):
+        page = existing_pdf.pages[page_number]
+        page.merge_page(overlay_pdf.pages[0])
+        output_pdf.add_page(page)
 
-        # Add the processed page to the output PDF
-        output.add_page(page)
-
-    # Write the output PDF to file
+    # Write the modified PDF to a file
     with open(output_pdf_path, "wb") as outputStream:
-        output.write(outputStream)
+        output_pdf.write(outputStream)
+
+# Example usage
+texts = [
+    (100, 100, "Hello, this is some text", "Helvetica", 12),
+    (20, 20, "Another line here", "Helvetica", 14),
+    (50, 50, "Third line, different place", "Helvetica", 16)
+]
 
 # Example usage
 scale = 0.5
-insert_text_to_pdf("/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf", "./output.pdf", "Hello, this is some text", 100, 100, scale_x=scale, scale_y=scale)
+insert_multiple_texts_to_pdf("/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf", "./output.pdf", texts)
