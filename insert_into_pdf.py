@@ -3,7 +3,7 @@ from reportlab.pdfgen import canvas
 import PyPDF2
 import io
 
-def insert_text_to_pdf(input_pdf_path, output_pdf_path, text, x, y):
+def insert_text_to_pdf(input_pdf_path, output_pdf_path, text, x, y, font_name="Helvetica", font_size=12, scale_x=1, scale_y=1):
     # Read the existing PDF to determine the page size
     existing_pdf = PyPDF2.PdfReader(open(input_pdf_path, "rb"))
     output = PyPDF2.PdfWriter()
@@ -14,14 +14,16 @@ def insert_text_to_pdf(input_pdf_path, output_pdf_path, text, x, y):
         page_height = page.mediabox.upper_right[1]
 
         # Rotate the page for proper text orientation (if necessary)
-        page.rotate(270)  # Using the new rotate method
+        page.rotate(270)  # Rotate page to horizontal for text insertion
 
         # Create a new PDF to overlay text
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=(page_width, page_height))
         can.saveState()  # Save the current state before making changes
         can.translate(x, y)
-        can.rotate(90)
+        can.rotate(90)  # Rotate text to match page orientation
+        can.setFont(font_name, font_size)  # Set the font and size for the text
+        can.scale(scale_x, scale_y)  # Apply scaling transformation
         can.drawString(0, 0, text)  # Draw the text at the new origin
         can.restoreState()  # Restore the canvas state
         can.save()
@@ -42,4 +44,5 @@ def insert_text_to_pdf(input_pdf_path, output_pdf_path, text, x, y):
         output.write(outputStream)
 
 # Example usage
-insert_text_to_pdf("/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf", "./output.pdf", "Hello, this is some text", 100, 100)
+scale = 0.5
+insert_text_to_pdf("/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf", "./output.pdf", "Hello, this is some text", 100, 100, scale_x=scale, scale_y=scale)
