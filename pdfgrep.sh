@@ -1,21 +1,26 @@
 #!/usr/bin/env bash
 
-# Function to search for a string in all PDF files in a directory
-search_string_in_pdfs() {
+# Global variables
+declare -a results
+selected_result=""
+selected_file=""
+selected_page=""
+selected_month=""
+selected_day=""
+
+# Function to check if pdfgrep is installed
+check_pdfgrep() {
+    if ! command -v pdfgrep &> /dev/null; then
+        echo "pdfgrep could not be found. Please install it and try again."
+        exit 1
+    fi
+}
+
+# Function to scan PDF files for a search string
+scan_pdfs() {
     local directory="$1"
     local search_string="$2"
 
-    # Check if pdfgrep is installed
-    if ! command -v pdfgrep &> /dev/null
-    then
-        echo "pdfgrep could not be found. Please install it and try again."
-        return 1
-    fi
-
-    # Create an array to hold search results
-    declare -a results
-
-    # Scan all PDF files in the directory
     while IFS= read -r -d '' file; do
         while IFS= read -r line; do
             page=$(echo "$line" | awk -F: '{print $1}')
@@ -23,42 +28,74 @@ search_string_in_pdfs() {
             results+=("$file: Page $page: $snippet")
         done < <(pdfgrep -n "$search_string" "$file")
     done < <(find "$directory" -type f -name "*.pdf" -print0)
+}
 
-    # Check if any results were found
+# Function to present results to the user
+present_results() {
     if [ ${#results[@]} -eq 0 ]; then
         echo "No occurrences of '$search_string' found in any PDF files in '$directory'."
-        return 0
+        exit 0
     fi
 
-    # Present results to the user
     echo "Found the following occurrences of '$search_string':"
     for i in "${!results[@]}"; do
         echo "[$i] ${results[$i]}"
     done
+}
 
-    # Prompt the user to choose a result
+# Function to prompt the user to choose a result
+prompt_user_selection() {
     read -p "Enter the number of the occurrence you want to select: " selection
 
-    # Validate the user's selection
     if ! [[ "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 0 ] || [ "$selection" -ge ${#results[@]} ]; then
         echo "Invalid selection."
-        return 1
+        exit 1
     fi
 
-    # Extract the selected result
     selected_result="${results[$selection]}"
     selected_file=$(echo "$selected_result" | cut -d: -f1)
     selected_page=$(echo "$selected_result" | cut -d: -f2 | awk '{print $2}')
-
 }
 
-# Wrapper script to call the function
+# Function to extract and convert the month and day from the first date
+extract_date_info() {
+    local date_info=$(echo "$selected_result" | grep -oP '\b[A-Z]{3}\s+\d{2}\b' | head -1)
+    selected_month=$(echo "$date_info" | awk '{print $1}')
+    selected_day=$(echo "$date_info" | awk '{print $2}')
+
+    # Convert month abbreviation to number
+    case "$selected_month" in
+        JAN) selected_month="01" ;;
+        FEB) selected_month="02" ;;
+        MAR) selected_month="03" ;;
+        APR) selected_month="04" ;;
+        MAY) selected_month="05" ;;
+        JUN) selected_month="06" ;;
+        JUL) selected_month="07" ;;
+        AUG) selected_month="08" ;;
+        SEP) selected_month="09" ;;
+        OCT) selected_month="10" ;;
+        NOV) selected_month="11" ;;
+        DEC) selected_month="12" ;;
+        *) selected_month="??" ;;
+    esac
+}
+
+# Main script
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <DIRECTORY> <SEARCH_STRING>"
     exit 1
 fi
 
-search_string_in_pdfs "$1" "$2"
+directory="$1"
+search_string="$2"
 
-# Output the filename and page number
+check_pdfgrep
+scan_pdfs "$directory" "$search_string"
+present_results
+prompt_user_selection
+extract_date_info
+
+# Print the results
 echo "Selected occurrence found in file '$selected_file' on page $selected_page."
+echo "Month: $selected_month, Day: $selected_day"
