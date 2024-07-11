@@ -43,11 +43,23 @@ date = "June 11, 2024"
 input_file = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
 output_file = "./output.pdf"
 
+student_name = "Vasilii Pustovoit"
+student_lastname = "Pustovoit"
+student_initials = "V. I."
+
+student_address = "Address, Toronto, ON, Canada"
+personnel_number = "1234567"
+
 texts = [
-    (90, 20, date, "Helvetica", 3),
-    (122.5, 140, money_spent, "Helvetica", 2),
-    (139,   140, money_spent, "Helvetica", 2),
-    (144.2, 140, money_spent, "Helvetica", 2)
+    (38, 20, personnel_number, "Helvetica-Bold", 2.5),
+    (44.5, 51, student_initials, "Helvetica-Bold", 2.5),
+    (44.5, 20, student_lastname, "Helvetica-Bold", 2.5),
+    (52, 20, student_address, "Helvetica-Bold", 2.5),
+    (116, 20, student_name, "Helvetica-Bold", 2.5),
+    (90, 20, date, "Helvetica-Bold", 2.5),
+    (122.5, 140, money_spent, "Helvetica-Bold", 2),
+    (139,   140, money_spent, "Helvetica-Bold", 2),
+    (144.2, 140, money_spent, "Helvetica-Bold", 2)
 ]
 
 # Example usage
