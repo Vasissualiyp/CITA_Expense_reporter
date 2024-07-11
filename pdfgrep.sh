@@ -81,14 +81,61 @@ extract_date_info() {
     esac
 }
 
+
+# Function to find the first date after the given date
+find_first_date_after() {
+    local year="$1"
+    local month="$2"
+    local day="$3"
+    local directory="$4"
+
+    # Convert the input month and day to a comparable format (MMDD)
+    local input_date="${month}${day}"
+
+    # Initialize a variable to hold the closest date
+    local closest_date=""
+
+    # Loop through each directory in the specified directory
+    for dir in "$directory"/*/; do
+        # Remove the trailing slash from the directory name
+        dir="${dir%/}"
+        
+        # Extract the directory name
+        dir_name=$(basename "$dir")
+        
+        # Extract the month and day from the directory name
+        local dir_month="${dir_name%-*}"
+        local dir_day="${dir_name#*-}"
+        
+        # Convert the directory month and day to a comparable format (MMDD)
+        local dir_date="${dir_month}${dir_day}"
+        
+        # Check if the directory date is after the input date and if it is closer than the current closest date
+        if [[ "$dir_date" -ge "$input_date" && ( -z "$closest_date" || "$dir_date" < "$closest_date" ) ]]; then
+            closest_date="$dir_date"
+        fi
+    done
+
+    # Format the closest date back to MM-DD
+    if [ -n "$closest_date" ]; then
+        closest_date="${closest_date:0:2}-${closest_date:2:2}"
+        echo "$closest_date"
+    else
+        echo "No date found after the given date."
+    fi
+}
+
+
 # Main script
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <DIRECTORY> <SEARCH_STRING>"
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <ESTATEMENTS_DIRECTORY> <SEARCH_STRING> <FINAL_DIRECTORY>"
     exit 1
 fi
 
 directory="$1"
 search_string="$2"
+final_directory="$3"
+year=2024
 
 check_pdfgrep
 scan_pdfs "$directory" "$search_string"
@@ -99,3 +146,5 @@ extract_date_info
 # Print the results
 echo "Selected occurrence found in file '$selected_file' on page $selected_page."
 echo "Month: $selected_month, Day: $selected_day"
+
+find_first_date_after "$year" "$selected_month" "$selected_day" "$final_directory"
