@@ -177,7 +177,7 @@ echo "Date of cosmolunch: $closest_date"
 # Now copy the transaction page to the expense reports directory
 output_dir="$expense_reports_directory/$closest_date/creditcard"
 mkdir "$output_dir"
-pdftk "$selected_file" cat "$selected_page" output "$output_dir/1.pdf" > /dev/null
-convert_pdfs_to_jpegs "$output_dir" > /dev/null
+pdftk "$selected_file" cat "$selected_page" output "$output_dir/1.pdf" 1> /dev/null 2> /dev/null
+convert_pdfs_to_jpegs "$output_dir" 1> /dev/null 2> /dev/null
 rm -rf "$output_dir/*.pdf"
 python censor_transactions.py "$output_dir/1.jpg"

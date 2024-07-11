@@ -54,7 +54,7 @@ class ImageViewer:
         self.canvas.bind("<MouseWheel>", self.on_mousewheel)
         self.master.bind("<Control-MouseWheel>", self.on_ctrl_mousewheel)
         self.master.bind("<Control-z>", self.undo_last_rectangle)
-        self.master.bind("<Control-s>", self.save_image)
+        self.master.bind("<Control-s>", self.save_and_exit)
 
         # Create buttons
         self.create_buttons()
@@ -69,7 +69,7 @@ class ImageViewer:
         undo_button = ttk.Button(button_frame, text="Undo", command=self.undo_last_rectangle)
         undo_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-        save_button = ttk.Button(button_frame, text="Save", command=self.save_image)
+        save_button = ttk.Button(button_frame, text="Save and Exit", command=self.save_and_exit)
         save_button.pack(side=tk.LEFT, padx=5, pady=5)
 
         exit_button = ttk.Button(button_frame, text="Exit", command=self.master.quit)
@@ -185,6 +185,11 @@ class ImageViewer:
         output_path = f"{file_name}-censored{file_extension}"
         self.working_image.save(output_path)
         print(f"Image saved as: {output_path}")
+
+    def save_and_exit(self):
+        self.save_image()
+        self.master.quit()
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
