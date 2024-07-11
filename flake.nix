@@ -26,6 +26,8 @@
             (python3.withPackages (ps: with ps; [
               tkinter
               pillow
+			  reportlab
+			  pypdf2
             ]))
           ];
         };
