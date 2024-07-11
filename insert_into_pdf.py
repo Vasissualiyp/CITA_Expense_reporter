@@ -10,13 +10,17 @@ def insert_multiple_texts_to_pdf(input_pdf_path, output_pdf_path, texts):
 
     # Create a single PDF in memory to overlay text on all pages
     packet = io.BytesIO()
-    can = canvas.Canvas(packet)
+    can = canvas.Canvas(packet, pagesize=letter)  # Ensure the canvas size matches your PDF page size
 
     # Add each text to the overlay PDF
     for text_details in texts:
         x, y, text, font_name, font_size = text_details
+        can.saveState()  # Save the current graphical state
+        can.translate(x, y)  # Move to the coordinate where the text will start
+        can.rotate(90)  # Rotate the canvas so the text will be horizontal
         can.setFont(font_name, font_size)
-        can.drawString(x, y, text)
+        can.drawString(0, 0, text)  # Draw the text at the new origin
+        can.restoreState()  # Restore the graphical state
 
     can.save()
 
@@ -34,13 +38,18 @@ def insert_multiple_texts_to_pdf(input_pdf_path, output_pdf_path, texts):
     with open(output_pdf_path, "wb") as outputStream:
         output_pdf.write(outputStream)
 
-# Example usage
+money_spent = "$"+ str(100)
+date = "June 11, 2024"
+input_file = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
+output_file = "./output.pdf"
+
 texts = [
-    (100, 100, "Hello, this is some text", "Helvetica", 12),
-    (20, 20, "Another line here", "Helvetica", 14),
-    (50, 50, "Third line, different place", "Helvetica", 16)
+    (90, 20, date, "Helvetica", 3),
+    (122.5, 140, money_spent, "Helvetica", 2),
+    (139,   140, money_spent, "Helvetica", 2),
+    (144.2, 140, money_spent, "Helvetica", 2)
 ]
 
 # Example usage
 scale = 0.5
-insert_multiple_texts_to_pdf("/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf", "./output.pdf", texts)
+insert_multiple_texts_to_pdf(input_file, output_file, texts)
