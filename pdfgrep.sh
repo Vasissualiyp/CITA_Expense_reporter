@@ -125,6 +125,29 @@ find_first_date_after() {
     fi
 }
 
+# Function to convert PDF to JPEG
+convert_pdfs_to_jpegs() {
+    local output_dir="$1"
+
+    # Check if pdftoppm is installed
+    if ! command -v pdftoppm &> /dev/null; then
+        echo "pdftoppm could not be found. Please install it and try again."
+        exit 1
+    fi
+
+    # Loop through each PDF file in the directory
+    for pdf_file in "$output_dir"/*.pdf; do
+        # Extract the base name (without extension) of the file
+        base_name=$(basename "$pdf_file" .pdf)
+
+        # Convert the PDF to JPEG
+        pdftoppm -jpeg "$pdf_file" "$output_dir/$base_name"
+
+        # Rename the output file from *.jpg to the desired name
+        mv "$output_dir/$base_name-1.jpg" "$output_dir/$base_name.jpg"
+    done
+}
+
 
 # Main script
 if [ "$#" -ne 3 ]; then
@@ -154,4 +177,7 @@ echo "Date of cosmolunch: $closest_date"
 # Now copy the transaction page to the expense reports directory
 output_dir="$expense_reports_directory/$closest_date/creditcard"
 mkdir "$output_dir"
-pdftk "$selected_file" cat "$selected_page" output "$output_dir/1.pdf"
+pdftk "$selected_file" cat "$selected_page" output "$output_dir/1.pdf" > /dev/null
+convert_pdfs_to_jpegs "$output_dir" > /dev/null
+rm -rf "$output_dir/*.pdf"
+python censor_transactions.py "$output_dir/1.jpg"
