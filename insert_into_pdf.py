@@ -3,24 +3,33 @@ from reportlab.pdfgen import canvas
 import PyPDF2
 import io
 
-def insert_multiple_texts_to_pdf(input_pdf_path, output_pdf_path, texts):
+def insert_texts_and_images_to_pdf(input_pdf_path, output_pdf_path, texts, images):
     # Open the existing PDF
     existing_pdf = PyPDF2.PdfReader(open(input_pdf_path, "rb"))
     output_pdf = PyPDF2.PdfWriter()
 
-    # Create a single PDF in memory to overlay text on all pages
+    # Create a single PDF in memory to overlay texts and images on all pages
     packet = io.BytesIO()
     can = canvas.Canvas(packet, pagesize=letter)  # Ensure the canvas size matches your PDF page size
 
     # Add each text to the overlay PDF
     for text_details in texts:
-        x, y, text, font_name, font_size = text_details
+        y, x, text, font_name, font_size = text_details
         can.saveState()  # Save the current graphical state
         can.translate(x, y)  # Move to the coordinate where the text will start
-        can.rotate(90)  # Rotate the canvas so the text will be horizontal
+        can.rotate(90)
         can.setFont(font_name, font_size)
         can.drawString(0, 0, text)  # Draw the text at the new origin
         can.restoreState()  # Restore the graphical state
+
+    # Add each image to the overlay PDF
+    for image_details in images:
+        y, x, image_path, width, height = image_details
+        can.saveState()  # Save the current graphical state before rotating
+        can.translate(x + width / 2, y + height / 2)  # Move the origin to the center of the image
+        can.rotate(90)  # Rotate the canvas by 90 degrees
+        can.drawImage(image_path, -width / 2, -height / 2, width=width, height=height, mask='auto')  # Draw the image centered on the new origin
+        can.restoreState()
 
     can.save()
 
@@ -50,18 +59,23 @@ student_initials = "V. I."
 student_address = "Address, Toronto, ON, Canada"
 personnel_number = "1234567"
 
+signature_path = "./config/signature.png"
+
 texts = [
-    (38, 20, personnel_number, "Helvetica-Bold", 2.5),
-    (44.5, 51, student_initials, "Helvetica-Bold", 2.5),
-    (44.5, 20, student_lastname, "Helvetica-Bold", 2.5),
-    (52, 20, student_address, "Helvetica-Bold", 2.5),
-    (116, 20, student_name, "Helvetica-Bold", 2.5),
-    (90, 20, date, "Helvetica-Bold", 2.5),
-    (122.5, 140, money_spent, "Helvetica-Bold", 2),
-    (139,   140, money_spent, "Helvetica-Bold", 2),
-    (144.2, 140, money_spent, "Helvetica-Bold", 2)
+    (20, 38, personnel_number, "Helvetica-Bold", 2.5), # x, y, string, font, size
+    (51, 44.5, student_initials, "Helvetica-Bold", 2.5),
+    (20, 44.5, student_lastname, "Helvetica-Bold", 2.5),
+    (20, 52, student_address, "Helvetica-Bold", 2.5),
+    (20, 116, student_name, "Helvetica-Bold", 2.5),
+    (20, 90, date, "Helvetica-Bold", 2.5),
+    (140, 122.5, money_spent, "Helvetica-Bold", 2),
+    (140, 139,   money_spent, "Helvetica-Bold", 2),
+    (140, 144.2, money_spent, "Helvetica-Bold", 2)
+]
+images = [
+    (20, 90, "./config/signature.png", 30, 6),  # x, y, path, width, height
 ]
 
+
 # Example usage
-scale = 0.5
-insert_multiple_texts_to_pdf(input_file, output_file, texts)
+insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
