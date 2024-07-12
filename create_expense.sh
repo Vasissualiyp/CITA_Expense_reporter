@@ -216,28 +216,36 @@ censor_transactions() {
   echo ""
   echo ""
   echo "Now you have to only enable transaction for ${selected_month}-${selected_day}:"
-  python python/censor_transactions.py "$creditcard_out_dir/1.jpg"
+  python "${python_dir}"/censor_transactions.py "$creditcard_out_dir/1.jpg"
   rm -rf "$creditcard_out_dir/[0-9].pdf" "$creditcard_out_dir/[0-9].jpg"
 }
 
 create_reimbursement_form() {
   local application_file="${output_dir}/application.pdf"
   local mode="$1"
-  python python/insert_into_pdf.py "$mode" "$selected_amount" "$current_date" "$signed_reimbursement_form_path" "$application_file"
+  python "${python_dir}"/insert_into_pdf.py "$mode" "$selected_amount" "$current_date" "$signed_reimbursement_form_path" "$application_file"
   echo "Saved to: $application_file"
 }
 
 combine_pdfs() {
   local output_dir="$1" 
   local filename="$2" 
-  python python/combine_docs.py "$output_dir" "$filename"
+
+  mkdir tmpbin
+  cd tmpbin # moving to bin directory to now pollute the current directory with latex build files
+  
+  pdflatex "../$output_dir/description.tex"
+  mv ./description.pdf "../$output_dir"
+  python "${python_dir}"/combine_docs.py "../$output_dir" "$filename"
+  cd ..
+  rm -rf ./tmpbin
 }
 
 run_python_scripts() {
   mode="$1"
   output_dir="$2"
   final_report_filename="$3"
-  censor_transactions
+  #censor_transactions
   create_reimbursement_form "$mode"
   combine_pdfs "$output_dir" "$final_report_filename"
 }
@@ -255,6 +263,7 @@ estatements_directory="$1"
 search_string="$2"
 expense_reports_directory="$3"
 final_report_filename="combined_application.pdf"
+python_dir=$(pwd)/python
 autoloop=1
 year=2024
 
@@ -282,6 +291,5 @@ else # Case when we do autoloop
 	i=$((i+1))
 	echo ""
 	echo ""
-	#read -p "wait..." n
   done
 fi

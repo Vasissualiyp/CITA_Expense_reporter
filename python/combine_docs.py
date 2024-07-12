@@ -99,6 +99,7 @@ def add_pdf_to_merger(merger, file_path, width, height, rotate=False):
 
 def combine_files_to_pdf(directory, output_filename):
     required_files = [
+        "description.pdf",
         "application.pdf",
         "announcement.pdf",
         "Signup_sheet.jpg",
@@ -119,7 +120,7 @@ def combine_files_to_pdf(directory, output_filename):
     page_width, page_height = 612, 792  # Points (1 inch = 72 points)
     
     # Add the PDF files
-    for file in ["application.pdf", "announcement.pdf", "receipt.pdf"]:
+    for file in ["description.pdf", "application.pdf", "announcement.pdf", "receipt.pdf"]:
         file_path = os.path.join(directory, file)
         rotate = (file == "application.pdf")
         add_pdf_to_merger(merger, file_path, page_width, page_height, rotate)
