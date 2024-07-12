@@ -71,16 +71,11 @@ def sum_floats_from_pdf_array(pdf_array):
     total_sum = 0.0
     for item in pdf_array:
         x, y, value, font, size = item
-        print(x, value)
         if x == 140:
             print("success")
             try:
                 value_float = float(value.replace('$', '').replace(',', ''))
-                print("Float value:")
-                print(value_float)
                 total_sum += value_float
-                print("Total sum:")
-                print(total_sum)
             except ValueError:
                 # Handle the case where value is not a float, continue to the next item
                 continue
@@ -109,13 +104,13 @@ def main(mode, money_spent, date_str, input_file, output_file):
     table_params = define_reimbursement_table()
 
     student_info = [
-        (20,  38,                       personnel_number, font, 2.5), # x, y, string, font, size
-        (51,  44.5,                     student_initials, font, 2.5),
-        (20,  44.5,                     student_lastname, font, 2.5),
-        (20,  52,                       student_address,  font, 2  ),
-        (20,  116,                      student_name,     font, 2.5),
-        (20,  70,                       dept_contact,     font, 2.5),
-        (20,  90,                       date,             font, 2.5),
+        (20,  38,   personnel_number, font, 2.5), # x, y, string, font, size
+        (51,  44.5, student_initials, font, 2.5),
+        (20,  44.5, student_lastname, font, 2.5),
+        (20,  52,   student_address,  font, 2  ),
+        (20,  116,  student_name,     font, 2.5),
+        (20,  70,   dept_contact,     font, 2.5),
+        (20,  90,   date,             font, 2.5),
     ]
     images = [
         (20, 90, signature_path, 30, 6),  # x, y, path, width, height
@@ -134,8 +129,8 @@ def main(mode, money_spent, date_str, input_file, output_file):
     money_spent = sum_floats_from_pdf_array(texts)
     # Add total spent
     texts += [
-        (140, getrow(35, table_params), str(money_spent),      font, 2  ),
-        (140, getrow(37, table_params), str(money_spent),      font, 2  )
+        (140, getrow(35, table_params), money_spent,      font, 2  ),
+        (140, getrow(37, table_params), money_spent,      font, 2  )
     ]
     texts += student_info
     
@@ -143,14 +138,14 @@ def main(mode, money_spent, date_str, input_file, output_file):
     insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        print("Usage: python insert_into_pdf.py <money_spent> <date> <input_pdf> <output_pdf>")
+    if len(sys.argv) != 6:
+        print("Usage: python insert_into_pdf.py <mode> <money_spent> <date> <input_pdf> <output_pdf>")
         sys.exit(1)
 
-    mode = 'other'
-    money_spent = sys.argv[1]
-    date = sys.argv[2]
-    input_file = sys.argv[3]
-    output_file = sys.argv[4]
+    mode = sys.argv[1] # cosmology, test or other
+    money_spent = sys.argv[2] # How much money was spent (only relevant for cosmology)
+    date = sys.argv[3] # Today's date
+    input_file = sys.argv[4] # Base pdf which will be altered
+    output_file = sys.argv[5] # Where to save the resulting pdf
 
     main(mode, money_spent, date, input_file, output_file)

@@ -61,6 +61,23 @@ prompt_user_selection() {
     selected_page=$(echo "$selected_result" | cut -d: -f2 | awk '{print $2}')
 }
 
+# Function that does same thing as prompt_user_selection, except automatically based
+# on a provided selection id
+autoloop_selection() {
+    local i="$1"
+
+    if ! [[ "$i" =~ ^[0-9]+$ ]] || [ "$i" -lt 0 ] || [ "$i" -ge ${#results[@]} ]; then
+        echo -1
+        return
+    fi
+
+    selected_result="${results[$i]}"
+    selected_file=$(echo "$selected_result" | cut -d: -f1)
+    selected_page=$(echo "$selected_result" | cut -d: -f2 | awk '{print $2}')
+    
+    echo 0  # Success
+}
+
 # Function to extract and convert the month and day from the first date
 extract_date_info() {
     local date_info=$(echo "$selected_result" | grep -oP '\b[A-Z]{3}\s+\d{2}\b' | head -1)
@@ -188,11 +205,21 @@ censor_transactions() {
 
 create_reimbursement_form() {
   local application_file="${output_dir}/application.pdf"
-  python python/insert_into_pdf.py "$selected_amount" "$current_date" "$signed_reimbursement_form_path" "$application_file"
+  local mode="$1"
+  python python/insert_into_pdf.py "$mode" "$selected_amount" "$current_date" "$signed_reimbursement_form_path" "$application_file"
   echo "Saved to: $application_file"
 }
 
-# Main script
+combine_pdfs() {
+  local output_dir="$1" 
+  local filename="$2" 
+  python python/combine_docs.py "$output_dir" "$filename"
+}
+
+# ------------------------
+# ----- Main script ------
+# ------------------------
+
 if [ "$#" -ne 3 ]; then
     echo "Usage: $0 <ESTATEMENTS_DIRECTORY> <SEARCH_STRING> <EXPENSE_REPORTS_DIRECTORY>"
     exit 1
@@ -201,9 +228,17 @@ fi
 estatements_directory="$1"
 search_string="$2"
 expense_reports_directory="$3"
+final_report_filename="combined_application.pdf"
 year=2024
+
+if [[ "$expense_reports_directory" == *"Cosmolunch"* ]]; then
+    mode="cosmolunch"
+else
+    mode="other"
+fi
 
 get_date
 output_dir="$expense_reports_directory/$closest_date"
 #censor_transactions
-create_reimbursement_form
+create_reimbursement_form "$mode"
+combine_pdfs "$output_dir" "$final_report_filename"
