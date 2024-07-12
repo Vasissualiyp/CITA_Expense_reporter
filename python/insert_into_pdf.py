@@ -82,24 +82,33 @@ def main(money_spent, date_str, input_file, output_file):
     font = config['font']
     student_address = config['student_address']
     personnel_number = config['personnel_number']
+    dept_contact = config['department_contact']
     
     signature_path = "./config/signature.png"
 
     table_params = define_reimbursement_table()
-    texts = [
+
+    student_info = [
         (20,  38,                       personnel_number, font, 2.5), # x, y, string, font, size
         (51,  44.5,                     student_initials, font, 2.5),
         (20,  44.5,                     student_lastname, font, 2.5),
         (20,  52,                       student_address,  font, 2  ),
         (20,  116,                      student_name,     font, 2.5),
+        (20,  70,                       dept_contact,     font, 2.5),
         (20,  90,                       date,             font, 2.5),
+    ]
+
+    finance_info = [
         (140, getrow(29, table_params), money_spent,      font, 2  ),
         (140, getrow(35, table_params), money_spent,      font, 2  ),
         (140, getrow(37, table_params), money_spent,      font, 2  )
     ]
+
     images = [
         (20, 90, signature_path, 30, 6),  # x, y, path, width, height
     ]
+
+    texts = student_info + finance_info
     #texts = generate_texts(font, table_params) # For testing purposes
     
     # Example usage
