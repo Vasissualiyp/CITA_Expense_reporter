@@ -1,6 +1,7 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from datetime import datetime
+from full_reimbursement import define_table, getrow, generate_texts, table_params
 import PyPDF2
 import io
 import sys
@@ -97,6 +98,7 @@ def main(money_spent, date_str, input_file, output_file):
     images = [
         (20, 90, signature_path, 30, 6),  # x, y, path, width, height
     ]
+    texts = generate_texts(font, table_params)
     
     # Example usage
     insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
