@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+workdir='../2024/Cosmolunch'
+
 # Iterate over all jpg files with the specific pattern
-for file in Cosmolunch_2024-*.jpg; do
+for file in $workdir/Cosmolunch_2024-*.jpg; do
   # Extract the month and day part from the filename
   # Ensure we are extracting correctly by checking the file format
   if [[ $file =~ Cosmolunch_2024-([0-9]{2})-([0-9]{2}).jpg ]]; then

@@ -1,7 +1,9 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from datetime import datetime
 import PyPDF2
 import io
+import sys
 
 def insert_texts_and_images_to_pdf(input_pdf_path, output_pdf_path, texts, images):
     # Open the existing PDF
@@ -47,35 +49,62 @@ def insert_texts_and_images_to_pdf(input_pdf_path, output_pdf_path, texts, image
     with open(output_pdf_path, "wb") as outputStream:
         output_pdf.write(outputStream)
 
-money_spent = "$"+ str(100)
-date = "June 11, 2024"
-input_file = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
-output_file = "./output.pdf"
+def convert_date_to_string(date_str):
+    # Parse the input date string
+    date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+    
+    # Convert to the desired format
+    formatted_date = date_obj.strftime('%B %d, %Y')
+    
+    return formatted_date
 
-student_name = "Vasilii Pustovoit"
-student_lastname = "Pustovoit"
-student_initials = "V. I."
+def main(money_spent, date_str, input_file, output_file):
+    
+    date = convert_date_to_string(date_str)
 
-student_address = "Address, Toronto, ON, Canada"
-personnel_number = "1234567"
+    student_name = "Vasilii Pustovoit"
+    student_lastname = "Pustovoit"
+    student_initials = "V. I."
+    font = "Helvetica-Bold"
+    
+    student_address = "Address, Toronto, ON, Canada"
+    personnel_number = "1234567"
+    
+    signature_path = "./config/signature.png"
+    
+    texts = [
+        (20,  38,    personnel_number, font, 2.5), # x, y, string, font, size
+        (51,  44.5,  student_initials, font, 2.5),
+        (20,  44.5,  student_lastname, font, 2.5),
+        (20,  52,    student_address,  font, 2.5),
+        (20,  116,   student_name,     font, 2.5),
+        (20,  90,    date,             font, 2.5),
+        (140, 122.5, money_spent,      font, 2  ),
+        (140, 139,   money_spent,      font, 2  ),
+        (140, 144.2, money_spent,      font, 2  )
+    ]
+    images = [
+        (20, 90, "./config/signature.png", 30, 6),  # x, y, path, width, height
+    ]
+    
+    # Example usage
+    insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
 
-signature_path = "./config/signature.png"
 
-texts = [
-    (20, 38, personnel_number, "Helvetica-Bold", 2.5), # x, y, string, font, size
-    (51, 44.5, student_initials, "Helvetica-Bold", 2.5),
-    (20, 44.5, student_lastname, "Helvetica-Bold", 2.5),
-    (20, 52, student_address, "Helvetica-Bold", 2.5),
-    (20, 116, student_name, "Helvetica-Bold", 2.5),
-    (20, 90, date, "Helvetica-Bold", 2.5),
-    (140, 122.5, money_spent, "Helvetica-Bold", 2),
-    (140, 139,   money_spent, "Helvetica-Bold", 2),
-    (140, 144.2, money_spent, "Helvetica-Bold", 2)
-]
-images = [
-    (20, 90, "./config/signature.png", 30, 6),  # x, y, path, width, height
-]
+if __name__ == "__main__":
+    if len(sys.argv) != 5:
+        print("Usage: python insert_into_pdf.py <money_spent> <date> <input_pdf> <output_pdf>")
+        sys.exit(1)
+
+    money_spent = sys.argv[1]
+    date = sys.argv[2]
+    input_file = sys.argv[3]
+    output_file = sys.argv[4]
+
+    #money_spent = "$"+ str(100)
+    #date = "2024-03-20"
+    #input_file = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
+    #output_file = "./output.pdf"
 
 
-# Example usage
-insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
+    main(money_spent, date, input_file, output_file)

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+signed_reimbursement_form_path="/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
+current_date=$(date +%Y-%m-%d)
+
 # Global variables
 declare -a results
 selected_result=""
@@ -7,6 +10,7 @@ selected_file=""
 selected_page=""
 selected_month=""
 selected_day=""
+selected_amount=""
 
 # Function to check if pdfgrep is installed
 check_pdfgrep() {
@@ -79,6 +83,9 @@ extract_date_info() {
         DEC) selected_month="12" ;;
         *) selected_month="??" ;;
     esac
+
+	# Extract the dollar amount
+    selected_amount=$(echo "$selected_result" | grep -oP '\$\d+(\.\d{2})?' | head -1)
 }
 
 
@@ -148,6 +155,40 @@ convert_pdfs_to_jpegs() {
     done
 }
 
+get_date() {
+  check_pdfgrep
+  scan_pdfs "$estatements_directory" "$search_string"
+  present_results
+  prompt_user_selection
+  extract_date_info
+
+  # Print the transaction info
+  echo "Selected occurrence found in file '$selected_file' on page $selected_page."
+  echo "Month: $selected_month, Day: $selected_day"
+  echo "Money amount: $selected_amount"
+  
+  # Get the first cosmolunch that happened after the transaction happened
+  find_first_date_after "$year" "$selected_month" "$selected_day" "$expense_reports_directory"
+  echo "Date of cosmolunch: $closest_date"
+}
+
+censor_transactions() {
+# Now copy the transaction page to the expense reports directory
+  output_dir="$expense_reports_directory/$closest_date/creditcard"
+  mkdir "$output_dir"
+  pdftk "$selected_file" cat "$selected_page" output "$output_dir/1.pdf" 1> /dev/null 2> /dev/null
+  convert_pdfs_to_jpegs "$output_dir" 1> /dev/null 2> /dev/null
+  rm -rf "$output_dir/*.pdf"
+  echo ""
+  echo ""
+  echo "Now you have to only enable transaction for ${selected_month}-${selected_day}:"
+  python censor_transactions.py "$output_dir/1.jpg"
+  rm -rf "$output_dir/[0-9].pdf" "$output_dir/[0-9].jpg"
+}
+
+create_reimbursement_form() {
+  python insert_into_pdf.py "$selected_amount" "$current_date" "$signed_reimbursement_form_path" "./output.pdf"
+}
 
 # Main script
 if [ "$#" -ne 3 ]; then
@@ -160,28 +201,6 @@ search_string="$2"
 expense_reports_directory="$3"
 year=2024
 
-check_pdfgrep
-scan_pdfs "$estatements_directory" "$search_string"
-present_results
-prompt_user_selection
-extract_date_info
-
-# Print the transaction info
-echo "Selected occurrence found in file '$selected_file' on page $selected_page."
-echo "Month: $selected_month, Day: $selected_day"
-
-# Get the first cosmolunch that happened after the transaction happened
-find_first_date_after "$year" "$selected_month" "$selected_day" "$expense_reports_directory"
-echo "Date of cosmolunch: $closest_date"
-
-# Now copy the transaction page to the expense reports directory
-output_dir="$expense_reports_directory/$closest_date/creditcard"
-mkdir "$output_dir"
-pdftk "$selected_file" cat "$selected_page" output "$output_dir/1.pdf" 1> /dev/null 2> /dev/null
-convert_pdfs_to_jpegs "$output_dir" 1> /dev/null 2> /dev/null
-rm -rf "$output_dir/*.pdf"
-echo ""
-echo ""
-echo "Now you have to only enable transaction for ${selected_month}-${selected_day}:"
-python censor_transactions.py "$output_dir/1.jpg"
-rm -rf "$output_dir/[0-9].pdf" "$output_dir/[0-9].jpg"
+get_date
+create_reimbursement_form
+#censor_transactions
