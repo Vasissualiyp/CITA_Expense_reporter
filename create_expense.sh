@@ -155,6 +155,7 @@ find_first_date_after() {
 # Function to convert PDF to JPEG
 convert_pdfs_to_jpegs() {
     local output_dir="$1"
+	local quality="$2"
 
     # Check if pdftoppm is installed
     if ! command -v pdftoppm &> /dev/null; then
@@ -168,7 +169,7 @@ convert_pdfs_to_jpegs() {
         base_name=$(basename "$pdf_file" .pdf)
 
         # Convert the PDF to JPEG
-        pdftoppm -jpeg "$pdf_file" "$output_dir/$base_name"
+        pdftoppm -jpeg -r "$quality" "$pdf_file" "$output_dir/$base_name"
 
         # Rename the output file from *.jpg to the desired name
         mv "$output_dir/$base_name-1.jpg" "$output_dir/$base_name.jpg"
@@ -208,11 +209,12 @@ get_date_autoloop() {
 }
 
 censor_transactions() {
-# Now copy the transaction page to the expense reports directory
+  # Now copy the transaction page to the expense reports directory
+  jpg_quality=600
   creditcard_out_dir="$output_dir/creditcard"
   mkdir "$creditcard_out_dir"
   pdftk "$selected_file" cat "$selected_page" output "$creditcard_out_dir/1.pdf" 1> /dev/null 2> /dev/null
-  convert_pdfs_to_jpegs "$creditcard_out_dir" 1> /dev/null 2> /dev/null
+  convert_pdfs_to_jpegs "$creditcard_out_dir" "$jpg_quality" 1> /dev/null 2> /dev/null
   rm -rf "$creditcard_out_dir/*.pdf"
   echo ""
   echo ""
@@ -238,7 +240,7 @@ run_python_scripts() {
   mode="$1"
   output_dir="$2"
   final_report_filename="$3"
-  #censor_transactions
+  censor_transactions
   create_reimbursement_form "$mode"
   combine_pdfs "$output_dir" "$final_report_filename"
 }
@@ -256,7 +258,7 @@ estatements_directory="$1"
 search_string="$2"
 expense_reports_directory="$3"
 final_report_filename="combined_application.pdf"
-autoloop=1
+autoloop=0
 year=2024
 
 if [[ "$expense_reports_directory" == *"Cosmolunch"* ]]; then
@@ -267,8 +269,6 @@ fi
 
 check_pdfgrep
 scan_pdfs "$estatements_directory" "$search_string"
-
-echo "$autoloop"
 
 if [ "$autoloop" -eq 0 ]; then # Case when we don't loop
   get_date
