@@ -4,6 +4,13 @@ from datetime import datetime
 import PyPDF2
 import io
 import sys
+import json
+
+# Function to read configuration from a JSON file
+def read_config(config_file):
+    with open(config_file, 'r') as file:
+        config = json.load(file)
+    return config
 
 def insert_texts_and_images_to_pdf(input_pdf_path, output_pdf_path, texts, images):
     # Open the existing PDF
@@ -60,15 +67,19 @@ def convert_date_to_string(date_str):
 
 def main(money_spent, date_str, input_file, output_file):
     
+    # Put provided date into a nice format
     date = convert_date_to_string(date_str)
 
-    student_name = "Vasilii Pustovoit"
-    student_lastname = "Pustovoit"
-    student_initials = "V. I."
-    font = "Helvetica-Bold"
+    # Read the configuration file
+    config = read_config('config/config.json')
     
-    student_address = "Address, Toronto, ON, Canada"
-    personnel_number = "1234567"
+    # Access the configuration values
+    student_name = config['student_name']
+    student_lastname = config['student_lastname']
+    student_initials = config['student_initials']
+    font = config['font']
+    student_address = config['student_address']
+    personnel_number = config['personnel_number']
     
     signature_path = "./config/signature.png"
     
@@ -84,7 +95,7 @@ def main(money_spent, date_str, input_file, output_file):
         (140, 144.2, money_spent,      font, 2  )
     ]
     images = [
-        (20, 90, "./config/signature.png", 30, 6),  # x, y, path, width, height
+        (20, 90, signature_path, 30, 6),  # x, y, path, width, height
     ]
     
     # Example usage
@@ -100,11 +111,5 @@ if __name__ == "__main__":
     date = sys.argv[2]
     input_file = sys.argv[3]
     output_file = sys.argv[4]
-
-    #money_spent = "$"+ str(100)
-    #date = "2024-03-20"
-    #input_file = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
-    #output_file = "./output.pdf"
-
 
     main(money_spent, date, input_file, output_file)
