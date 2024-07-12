@@ -69,6 +69,44 @@ class ExpenseCategory:
             pdf_array.append((x, y, value, font, size))
         return pdf_array
 
+class OtherExpenses:
+    def __init__(self, table_params):
+        self.table_params = table_params
+        self.expenses = []
+
+    def ask_other_expenses(self):
+        max_other_expenses = 6
+        count = 0
+
+        while count < max_other_expenses:
+            remaining = max_other_expenses - count
+            expense_name = input(f"Please insert the name for the other expense ({remaining} left) or press Enter to finish: ").strip()
+            
+            if expense_name == '':
+                break
+            
+            if expense_name.lower() == 'u' and self.expenses:
+                self.expenses.pop()
+                count -= 1
+                print("Last entry undone.")
+                continue
+
+            expense_amount = input(f"Enter the monetary amount for the expense '{expense_name}': ").strip()
+            self.expenses.append((expense_name, expense_amount))
+            count += 1
+
+    def get_pdf_array(self, font, size):
+        pdf_array = []
+        base_x = 140  # Base x position for the monetary amount
+        name_x = 96   # x position for the expense name
+        start_row = 29  # Starting row number for other expenses
+
+        for index, (name, amount) in enumerate(self.expenses):
+            y = getrow(start_row + index, self.table_params)
+            pdf_array.append((name_x, y, name, font, size))
+            pdf_array.append((base_x, y, amount, font, size))
+        
+        return pdf_array
 
 def main_spending(table_params, font, size):
     
@@ -101,6 +139,10 @@ def main_spending(table_params, font, size):
     pdf_array = []
     for category in categories:
         pdf_array.extend(category.get_pdf_array(font, size))
+    
+    other_expenses = OtherExpenses(table_params)
+    other_expenses.ask_other_expenses()
+    pdf_array.extend(other_expenses.get_pdf_array(font, size))    
     return pdf_array
 
 def define_table(*points):
