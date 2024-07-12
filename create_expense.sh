@@ -174,20 +174,22 @@ get_date() {
 
 censor_transactions() {
 # Now copy the transaction page to the expense reports directory
-  output_dir="$expense_reports_directory/$closest_date/creditcard"
-  mkdir "$output_dir"
-  pdftk "$selected_file" cat "$selected_page" output "$output_dir/1.pdf" 1> /dev/null 2> /dev/null
-  convert_pdfs_to_jpegs "$output_dir" 1> /dev/null 2> /dev/null
-  rm -rf "$output_dir/*.pdf"
+  creditcard_out_dir="$output_dir/creditcard"
+  mkdir "$creditcard_out_dir"
+  pdftk "$selected_file" cat "$selected_page" output "$creditcard_out_dir/1.pdf" 1> /dev/null 2> /dev/null
+  convert_pdfs_to_jpegs "$creditcard_out_dir" 1> /dev/null 2> /dev/null
+  rm -rf "$creditcard_out_dir/*.pdf"
   echo ""
   echo ""
   echo "Now you have to only enable transaction for ${selected_month}-${selected_day}:"
-  python censor_transactions.py "$output_dir/1.jpg"
-  rm -rf "$output_dir/[0-9].pdf" "$output_dir/[0-9].jpg"
+  python python/censor_transactions.py "$creditcard_out_dir/1.jpg"
+  rm -rf "$creditcard_out_dir/[0-9].pdf" "$creditcard_out_dir/[0-9].jpg"
 }
 
 create_reimbursement_form() {
-  python insert_into_pdf.py "$selected_amount" "$current_date" "$signed_reimbursement_form_path" "./output.pdf"
+  local application_file="${output_dir}/application.pdf"
+  python python/insert_into_pdf.py "$selected_amount" "$current_date" "$signed_reimbursement_form_path" "$application_file"
+  echo "Saved to: $application_file"
 }
 
 # Main script
@@ -202,5 +204,6 @@ expense_reports_directory="$3"
 year=2024
 
 get_date
-create_reimbursement_form
+output_dir="$expense_reports_directory/$closest_date"
 #censor_transactions
+create_reimbursement_form

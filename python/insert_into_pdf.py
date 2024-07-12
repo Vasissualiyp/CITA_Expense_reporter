@@ -87,7 +87,7 @@ def main(money_spent, date_str, input_file, output_file):
         (20,  38,    personnel_number, font, 2.5), # x, y, string, font, size
         (51,  44.5,  student_initials, font, 2.5),
         (20,  44.5,  student_lastname, font, 2.5),
-        (20,  52,    student_address,  font, 2.5),
+        (20,  52,    student_address,  font, 2  ),
         (20,  116,   student_name,     font, 2.5),
         (20,  90,    date,             font, 2.5),
         (140, 122.5, money_spent,      font, 2  ),
