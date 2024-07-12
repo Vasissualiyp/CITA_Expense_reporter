@@ -38,18 +38,29 @@ class ExpenseCategory:
         self.options = options
         self.table_params = table_params
         self.selected_options = {}
-    
-    def ask_user(self):
-        print(f"Please fill in the details for {self.name}:")
+        self.selected_indices = []
+
+    def select_options(self):
+        print(f"Please select the options you want to fill in for {self.name}:")
         for i, option in enumerate(self.options, 1):
             print(f"{i}. {option}")
-        selected_indices = input("Select the options you want to fill in (comma-separated numbers): ")
-        selected_indices = [int(index.strip()) for index in selected_indices.split(",") if index.strip().isdigit()]
-        for index in selected_indices:
-            if 1 <= index <= len(self.options):
-                value = input(f"Enter the value for {self.options[index - 1]}: ")
-                self.selected_options[self.options[index - 1]] = value
-    
+        selected_string = input("Select the options (as a single string of numbers, e.g., 134) or press Enter to skip: ").strip()
+        
+        if selected_string.lower() == 'u':
+            return 'undo'
+        
+        if selected_string == '':
+            self.selected_indices = []
+        else:
+            self.selected_indices = [int(char) for char in selected_string if char.isdigit() and 1 <= int(char) <= len(self.options)]
+        
+        return 'continue'
+
+    def fill_values(self):
+        for index in self.selected_indices:
+            value = input(f"Enter the value for {self.options[index - 1]}: ")
+            self.selected_options[self.options[index - 1]] = value
+
     def get_pdf_array(self, font, size):
         pdf_array = []
         for option, value in self.selected_options.items():
@@ -57,6 +68,7 @@ class ExpenseCategory:
             y = getrow(category_to_row[option], self.table_params)
             pdf_array.append((x, y, value, font, size))
         return pdf_array
+
 
 def main_spending(table_params, font, size):
     
@@ -71,18 +83,24 @@ def main_spending(table_params, font, size):
         ExpenseCategory("MEALS", ["ON (13%HST) (Meals)", "PEI, NS, NF, NB (15%HST) (Meals)", "All other provinces / territories (Meals)", "USA / International (Meals)"], table_params),
         ExpenseCategory("TAXI", ["ON (13%HST) (Taxi)", "PEI, NS, NF, NB (15%HST) (Taxi)", "All other provinces / territories (Taxi)", "USA / International (Taxi)"], table_params),
     ]
-    
+
+    current_category = 0
+    while current_category < len(categories):
+        action = categories[current_category].select_options()
+        if action == 'undo':
+            if current_category > 0:
+                current_category -= 1
+            else:
+                print("Already at the first category, cannot undo further.")
+        else:
+            current_category += 1
+
     for category in categories:
-        category.ask_user()
+        category.fill_values()
     
     pdf_array = []
     for category in categories:
         pdf_array.extend(category.get_pdf_array(font, size))
-    
-    #print("PDF Array:")
-    #for item in pdf_array:
-    #    print(item)
-
     return pdf_array
 
 def define_table(*points):
