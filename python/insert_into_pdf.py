@@ -85,15 +85,15 @@ def main(money_spent, date_str, input_file, output_file):
     signature_path = "./config/signature.png"
     
     texts = [
-        (20,  38,    personnel_number, font, 2.5), # x, y, string, font, size
-        (51,  44.5,  student_initials, font, 2.5),
-        (20,  44.5,  student_lastname, font, 2.5),
-        (20,  52,    student_address,  font, 2  ),
-        (20,  116,   student_name,     font, 2.5),
-        (20,  90,    date,             font, 2.5),
-        (140, 122.5, money_spent,      font, 2  ),
-        (140, 139,   money_spent,      font, 2  ),
-        (140, 144.2, money_spent,      font, 2  )
+        (20,  38,                       personnel_number, font, 2.5), # x, y, string, font, size
+        (51,  44.5,                     student_initials, font, 2.5),
+        (20,  44.5,                     student_lastname, font, 2.5),
+        (20,  52,                       student_address,  font, 2  ),
+        (20,  116,                      student_name,     font, 2.5),
+        (20,  90,                       date,             font, 2.5),
+        (140, getrow(29, table_params), money_spent,      font, 2  ),
+        (140, getrow(35, table_params), money_spent,      font, 2  ),
+        (140, getrow(37, table_params), money_spent,      font, 2  )
     ]
     images = [
         (20, 90, signature_path, 30, 6),  # x, y, path, width, height
