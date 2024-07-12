@@ -41,6 +41,7 @@ class ExpenseCategory:
         self.selected_indices = []
 
     def select_options(self):
+        print()
         print(f"Please select the options you want to fill in for {self.name}:")
         for i, option in enumerate(self.options, 1):
             print(f"{i}. {option}")
@@ -58,6 +59,7 @@ class ExpenseCategory:
 
     def fill_values(self):
         for index in self.selected_indices:
+            print()
             value = input(f"Enter the value for {self.options[index - 1]}: ")
             self.selected_options[self.options[index - 1]] = value
 
@@ -80,6 +82,7 @@ class OtherExpenses:
 
         while count < max_other_expenses:
             remaining = max_other_expenses - count
+            print()
             expense_name = input(f"Please insert the name for the other expense ({remaining} left) or press Enter to finish: ").strip()
             
             if expense_name == '':
