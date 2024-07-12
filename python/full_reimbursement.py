@@ -1,15 +1,3 @@
-row1=2
-y1=44.5
-row2=10
-y2=69
-row3=19
-y3=94.35
-row4=31
-y4=128
-row5=37
-y5=144.2
-
-
 def define_table(*points):
     """
     A function that defines a piecewise-linear connection between the row of the table and
@@ -63,7 +51,3 @@ def generate_texts(font, table_params):
         print(f'For {string}, y={y}')
         texts.append((x, y, string, font, size))
     return texts
-
-table_params = define_table((row1, y1), (row2, y2), (row3, y3), (row4, y4), (row5, y5))
-
-#print(getrow(30, table_params))

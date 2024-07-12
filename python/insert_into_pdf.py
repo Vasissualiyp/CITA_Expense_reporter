@@ -1,7 +1,8 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from datetime import datetime
-from full_reimbursement import define_table, getrow, generate_texts, table_params
+from full_reimbursement import define_table, getrow, generate_texts
+from define_table import define_reimbursement_table
 import PyPDF2
 import io
 import sys
@@ -83,7 +84,8 @@ def main(money_spent, date_str, input_file, output_file):
     personnel_number = config['personnel_number']
     
     signature_path = "./config/signature.png"
-    
+
+    table_params = define_reimbursement_table()
     texts = [
         (20,  38,                       personnel_number, font, 2.5), # x, y, string, font, size
         (51,  44.5,                     student_initials, font, 2.5),
@@ -98,7 +100,7 @@ def main(money_spent, date_str, input_file, output_file):
     images = [
         (20, 90, signature_path, 30, 6),  # x, y, path, width, height
     ]
-    texts = generate_texts(font, table_params)
+    #texts = generate_texts(font, table_params) # For testing purposes
     
     # Example usage
     insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
