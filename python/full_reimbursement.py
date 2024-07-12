@@ -58,9 +58,7 @@ class ExpenseCategory:
             pdf_array.append((x, y, value, font, size))
         return pdf_array
 
-def main_spending(table_params):
-    font = "Helvetica"
-    size = 2
+def main_spending(table_params, font, size):
     
     categories = [
         ExpenseCategory("AIRFARE: ECONOMY", ["Travel within Canada (Economy)", "Travel to USA from Ontario (Economy)", "All other Airfare (Economy)"], table_params),
@@ -81,9 +79,10 @@ def main_spending(table_params):
     for category in categories:
         pdf_array.extend(category.get_pdf_array(font, size))
     
-    print("PDF Array:")
-    for item in pdf_array:
-        print(item)
+    #print("PDF Array:")
+    #for item in pdf_array:
+    #    print(item)
+
     return pdf_array
 
 def define_table(*points):

@@ -108,7 +108,9 @@ def main(money_spent, date_str, input_file, output_file):
         (20, 90, signature_path, 30, 6),  # x, y, path, width, height
     ]
 
-    texts = main_spending(table_params)
+    fontsize = 2
+    texts = main_spending(table_params, font, fontsize)
+    texts += student_info
     #texts = student_info + finance_info
     #texts = generate_texts(font, table_params) # For testing purposes
     
