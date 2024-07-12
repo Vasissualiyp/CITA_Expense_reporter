@@ -35,10 +35,11 @@ Create a configuration file `config.json` in the `config` directory with the fol
 {
     "student_name": "Vasilii Pustovoit",
     "student_lastname": "Pustovoit",
-    "student_initials": "V. I.",
+    "student_initials": "V. P.",
     "font": "Helvetica-Bold",
-    "student_address": "Address, Toronto, ON, Canada",
-    "personnel_number": "1234567"
+    "student_address": "Address, City, ON, Canada",
+    "personnel_number": "1234567",
+    "department_contact": "Alice Smith"
 }
 ```
 
