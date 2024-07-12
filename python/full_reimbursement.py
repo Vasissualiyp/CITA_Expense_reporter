@@ -1,3 +1,91 @@
+import sys
+
+# Define the mapping of categories to row numbers
+category_to_row = {
+    "Travel within Canada (Economy)": 1,
+    "Travel to USA from Ontario (Economy)": 2,
+    "All other Airfare (Economy)": 3,
+    "Travel within Canada (Above-Economy)": 4,
+    "Travel to USA from Ontario (Above-Economy)": 5,
+    "All other Airfare (Above-Economy)": 6,
+    "ON (13%HST)": 7,
+    "PEI, NS, NF, NB (15%HST)": 8,
+    "All other provinces / territories": 9,
+    "USA / International": 10,
+    "Per Diem: Canada": 11,
+    "Per Diem: USA / International": 12,
+    "KMS x 57 cents/km": 13,
+    "Travel within Canada (Rail/Bus)": 14,
+    "Travel outside Canada (Rail/Bus)": 15,
+    "Travel within or outside Canada (Public Transit)": 16,
+    "ON (13%HST) (Car Rental)": 17,
+    "PEI, NS, NF, NB (15%HST) (Car Rental)": 18,
+    "All other provinces / territories (Car Rental)": 19,
+    "USA / International (Car Rental)": 20,
+    "ON (13%HST) (Meals)": 21,
+    "PEI, NS, NF, NB (15%HST) (Meals)": 22,
+    "All other provinces / territories (Meals)": 23,
+    "USA / International (Meals)": 24,
+    "ON (13%HST) (Taxi)": 25,
+    "PEI, NS, NF, NB (15%HST) (Taxi)": 26,
+    "All other provinces / territories (Taxi)": 27,
+    "USA / International (Taxi)": 28
+}
+
+class ExpenseCategory:
+    def __init__(self, name, options, table_params):
+        self.name = name
+        self.options = options
+        self.table_params = table_params
+        self.selected_options = {}
+    
+    def ask_user(self):
+        print(f"Please fill in the details for {self.name}:")
+        for i, option in enumerate(self.options, 1):
+            print(f"{i}. {option}")
+        selected_indices = input("Select the options you want to fill in (comma-separated numbers): ")
+        selected_indices = [int(index.strip()) for index in selected_indices.split(",") if index.strip().isdigit()]
+        for index in selected_indices:
+            if 1 <= index <= len(self.options):
+                value = input(f"Enter the value for {self.options[index - 1]}: ")
+                self.selected_options[self.options[index - 1]] = value
+    
+    def get_pdf_array(self, font, size):
+        pdf_array = []
+        for option, value in self.selected_options.items():
+            x = 140  # Assuming a fixed x position for now
+            y = getrow(category_to_row[option], self.table_params)
+            pdf_array.append((x, y, value, font, size))
+        return pdf_array
+
+def main_spending(table_params):
+    font = "Helvetica"
+    size = 2
+    
+    categories = [
+        ExpenseCategory("AIRFARE: ECONOMY", ["Travel within Canada (Economy)", "Travel to USA from Ontario (Economy)", "All other Airfare (Economy)"], table_params),
+        ExpenseCategory("AIRFARE: ABOVE-ECONOMY", ["Travel within Canada (Above-Economy)", "Travel to USA from Ontario (Above-Economy)", "All other Airfare (Above-Economy)"], table_params),
+        ExpenseCategory("ACCOMMODATION", ["ON (13%HST)", "PEI, NS, NF, NB (15%HST)", "All other provinces / territories", "USA / International"], table_params),
+        ExpenseCategory("ALLOWANCE", ["Per Diem: Canada", "Per Diem: USA / International", "KMS x 57 cents/km"], table_params),
+        ExpenseCategory("RAIL/BUS", ["Travel within Canada (Rail/Bus)", "Travel outside Canada (Rail/Bus)"], table_params),
+        ExpenseCategory("PUBLIC TRANSIT", ["Travel within or outside Canada (Public Transit)"], table_params),
+        ExpenseCategory("CAR RENTAL", ["ON (13%HST) (Car Rental)", "PEI, NS, NF, NB (15%HST) (Car Rental)", "All other provinces / territories (Car Rental)", "USA / International (Car Rental)"], table_params),
+        ExpenseCategory("MEALS", ["ON (13%HST) (Meals)", "PEI, NS, NF, NB (15%HST) (Meals)", "All other provinces / territories (Meals)", "USA / International (Meals)"], table_params),
+        ExpenseCategory("TAXI", ["ON (13%HST) (Taxi)", "PEI, NS, NF, NB (15%HST) (Taxi)", "All other provinces / territories (Taxi)", "USA / International (Taxi)"], table_params),
+    ]
+    
+    for category in categories:
+        category.ask_user()
+    
+    pdf_array = []
+    for category in categories:
+        pdf_array.extend(category.get_pdf_array(font, size))
+    
+    print("PDF Array:")
+    for item in pdf_array:
+        print(item)
+    return pdf_array
+
 def define_table(*points):
     """
     A function that defines a piecewise-linear connection between the row of the table and

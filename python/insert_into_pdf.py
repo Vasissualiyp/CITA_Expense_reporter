@@ -1,7 +1,7 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from datetime import datetime
-from full_reimbursement import define_table, getrow, generate_texts
+from full_reimbursement import define_table, getrow, generate_texts, main_spending
 from define_table import define_reimbursement_table
 import PyPDF2
 import io
@@ -108,7 +108,8 @@ def main(money_spent, date_str, input_file, output_file):
         (20, 90, signature_path, 30, 6),  # x, y, path, width, height
     ]
 
-    texts = student_info + finance_info
+    texts = main_spending(table_params)
+    #texts = student_info + finance_info
     #texts = generate_texts(font, table_params) # For testing purposes
     
     # Example usage
