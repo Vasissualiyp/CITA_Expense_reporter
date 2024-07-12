@@ -16,14 +16,18 @@ This project provides a set of scripts and tools to generate expense reports for
 ## Installation
 1. **Clone the repository:**
     ```sh
-    git clone <repository_url>
-    cd <repository_directory>
+    git clone https://github.com/Vasissualiyp/CITA_Expense_reporter.git
+    cd CITA_Expense_reporter
     ```
 
-2. (If using Nix with flakes) **Set up the development environment using Nix:**
+2a. (If using Nix with flakes) **Set up the development environment using Nix:**
     ```sh
     nix develop
     ```
+2b. (If not using Nix) **Install the dependencies**
+
+    Set up your python environment with dependencies listed above.
+    Also, make sure that pdftoppm and pdftk are installed.
 
 ## Configuration
 Create a configuration file `config.json` in the `config` directory with the following structure:
