@@ -169,7 +169,7 @@ convert_pdfs_to_jpegs() {
         base_name=$(basename "$pdf_file" .pdf)
 
         # Convert the PDF to JPEG
-        pdftoppm -jpg -r "$quality" "$pdf_file" "$output_dir/$base_name"
+        pdftoppm -jpeg -r "$quality" "$pdf_file" "$output_dir/$base_name"
 
         # Rename the output file from *.jpg to the desired name
         mv "$output_dir/$base_name-1.jpg" "$output_dir/$base_name.jpg"
@@ -177,14 +177,13 @@ convert_pdfs_to_jpegs() {
 }
 
 get_date() {
-  echo "We're NOT in autoloop"
   present_results
   prompt_user_selection
   extract_date_info
 
   # Print the transaction info
   echo "Selected occurrence found in file '$selected_file' on page $selected_page."
-  echo "Month: $selected_month, Day: $selected_day"
+  echo "Transaction Month: $selected_month, Day: $selected_day"
   echo "Money amount: $selected_amount"
   
   # Get the first cosmolunch that happened after the transaction happened
@@ -193,14 +192,12 @@ get_date() {
 }
 get_date_autoloop() {
   i="$1"
-  echo "We're in autoloop"
   autoloop_selection "$i"
   extract_date_info
-  echo "Done $i"
 
   # Print the transaction info
   echo "Selected occurrence found in file '$selected_file' on page $selected_page."
-  echo "Month: $selected_month, Day: $selected_day"
+  echo "Transaction Month: $selected_month, Day: $selected_day"
   echo "Money amount: $selected_amount"
   
   # Get the first cosmolunch that happened after the transaction happened
@@ -213,8 +210,8 @@ censor_transactions() {
   jpg_quality=300
   creditcard_out_dir="$output_dir/creditcard"
   mkdir "$creditcard_out_dir"
-  pdftk "$selected_file" cat "$selected_page" output "$creditcard_out_dir/1.pdf" 1> /dev/null 2> /dev/null
-  convert_pdfs_to_jpegs "$creditcard_out_dir" "$jpg_quality" 1> /dev/null 2> /dev/null
+  pdftk "$selected_file" cat "$selected_page" output "$creditcard_out_dir/1.pdf" # 1> /dev/null 2> /dev/null
+  convert_pdfs_to_jpegs "$creditcard_out_dir" "$jpg_quality" # 1> /dev/null 2> /dev/null
   rm -rf "$creditcard_out_dir/*.pdf"
   echo ""
   echo ""
@@ -258,7 +255,7 @@ estatements_directory="$1"
 search_string="$2"
 expense_reports_directory="$3"
 final_report_filename="combined_application.pdf"
-autoloop=0
+autoloop=1
 year=2024
 
 if [[ "$expense_reports_directory" == *"Cosmolunch"* ]]; then

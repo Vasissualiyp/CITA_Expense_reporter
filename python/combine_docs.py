@@ -68,7 +68,7 @@ def resize_and_rotate_page(page, target_width, target_height, rotate=False):
 
     return target_width, target_height
 
-def convert_images_to_pdf(file_path, pdf_path, page_width, page_height, dpi=300):
+def convert_images_to_pdf(file_path, pdf_path, page_width, page_height, dpi=100):
     image = Image.open(file_path)
     image = image.convert("RGB")
     # Calculate the new dimensions based on DPI
