@@ -68,7 +68,7 @@ class ExpenseCategory:
         for option, value in self.selected_options.items():
             x = 140  # Assuming a fixed x position for now
             y = getrow(category_to_row[option], self.table_params)
-            pdf_array.append((x, y, value, font, size))
+            pdf_array.append((x, y, '$' + str(float(value)), font, size))
         return pdf_array
 
 class OtherExpenses:
@@ -107,7 +107,7 @@ class OtherExpenses:
         for index, (name, amount) in enumerate(self.expenses):
             y = getrow(start_row + index, self.table_params)
             pdf_array.append((name_x, y, name, font, size))
-            pdf_array.append((base_x, y, amount, font, size))
+            pdf_array.append((base_x, y, '$' + str(float(amount)), font, size))
         
         return pdf_array
 

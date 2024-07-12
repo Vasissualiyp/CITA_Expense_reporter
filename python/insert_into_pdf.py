@@ -67,7 +67,27 @@ def convert_date_to_string(date_str):
     
     return formatted_date
 
-def main(money_spent, date_str, input_file, output_file):
+def sum_floats_from_pdf_array(pdf_array):
+    total_sum = 0.0
+    for item in pdf_array:
+        x, y, value, font, size = item
+        print(x, value)
+        if x == 140:
+            print("success")
+            try:
+                value_float = float(value.replace('$', '').replace(',', ''))
+                print("Float value:")
+                print(value_float)
+                total_sum += value_float
+                print("Total sum:")
+                print(total_sum)
+            except ValueError:
+                # Handle the case where value is not a float, continue to the next item
+                continue
+    total_sum_string = '$' + str(total_sum)
+    return total_sum_string
+
+def main(mode, money_spent, date_str, input_file, output_file):
     
     # Put provided date into a nice format
     date = convert_date_to_string(date_str)
@@ -97,35 +117,40 @@ def main(money_spent, date_str, input_file, output_file):
         (20,  70,                       dept_contact,     font, 2.5),
         (20,  90,                       date,             font, 2.5),
     ]
-
-    finance_info = [
-        (140, getrow(29, table_params), money_spent,      font, 2  ),
-        (140, getrow(35, table_params), money_spent,      font, 2  ),
-        (140, getrow(37, table_params), money_spent,      font, 2  )
-    ]
-
     images = [
         (20, 90, signature_path, 30, 6),  # x, y, path, width, height
     ]
 
-    fontsize = 2
-    texts = main_spending(table_params, font, fontsize)
+    if mode == 'cosmolunch':
+        texts = [
+            (140, getrow(29, table_params), money_spent,      font, 2  ),
+        ]
+    elif mode == 'test':
+        texts = generate_texts(font, table_params) # For testing purposes
+    else:
+        fontsize = 2
+        texts = main_spending(table_params, font, fontsize)
+
+    money_spent = sum_floats_from_pdf_array(texts)
+    # Add total spent
+    texts += [
+        (140, getrow(35, table_params), str(money_spent),      font, 2  ),
+        (140, getrow(37, table_params), str(money_spent),      font, 2  )
+    ]
     texts += student_info
-    #texts = student_info + finance_info
-    #texts = generate_texts(font, table_params) # For testing purposes
     
     # Example usage
     insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print("Usage: python insert_into_pdf.py <money_spent> <date> <input_pdf> <output_pdf>")
         sys.exit(1)
 
+    mode = 'other'
     money_spent = sys.argv[1]
     date = sys.argv[2]
     input_file = sys.argv[3]
     output_file = sys.argv[4]
 
-    main(money_spent, date, input_file, output_file)
+    main(mode, money_spent, date, input_file, output_file)
