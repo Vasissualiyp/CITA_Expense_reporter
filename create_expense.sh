@@ -20,7 +20,8 @@ check_pdfgrep() {
     fi
 }
 
-# Function to scan PDF files for a search string
+# Function to scan PDF files for a search string 
+# (this is used to find transactions in credit cards)
 scan_pdfs() {
     local directory="$1"
     local search_string="$2"
@@ -66,8 +67,10 @@ prompt_user_selection() {
 autoloop_selection() {
     local i="$1"
 
-    if ! [[ "$i" =~ ^[0-9]+$ ]] || [ "$i" -lt 0 ] || [ "$i" -ge ${#results[@]} ]; then
-        echo -1
+	if ! [[ "$i" =~ ^[0-9]+$ ]] || [ "$i" -lt 0 ] || [ "$(($i))" -ge ${#results[@]} ]; then
+        echo 1
+		echo "Checking the last one..."
+		flag_to_stop_autoloop=1
         return
     fi
 
@@ -173,11 +176,26 @@ convert_pdfs_to_jpegs() {
 }
 
 get_date() {
-  check_pdfgrep
-  scan_pdfs "$estatements_directory" "$search_string"
+  echo "We're NOT in autoloop"
   present_results
   prompt_user_selection
   extract_date_info
+
+  # Print the transaction info
+  echo "Selected occurrence found in file '$selected_file' on page $selected_page."
+  echo "Month: $selected_month, Day: $selected_day"
+  echo "Money amount: $selected_amount"
+  
+  # Get the first cosmolunch that happened after the transaction happened
+  find_first_date_after "$year" "$selected_month" "$selected_day" "$expense_reports_directory"
+  echo "Date of cosmolunch: $closest_date"
+}
+get_date_autoloop() {
+  i="$1"
+  echo "We're in autoloop"
+  autoloop_selection "$i"
+  extract_date_info
+  echo "Done $i"
 
   # Print the transaction info
   echo "Selected occurrence found in file '$selected_file' on page $selected_page."
@@ -216,6 +234,15 @@ combine_pdfs() {
   python python/combine_docs.py "$output_dir" "$filename"
 }
 
+run_python_scripts() {
+  mode="$1"
+  output_dir="$2"
+  final_report_filename="$3"
+  #censor_transactions
+  create_reimbursement_form "$mode"
+  combine_pdfs "$output_dir" "$final_report_filename"
+}
+
 # ------------------------
 # ----- Main script ------
 # ------------------------
@@ -229,6 +256,7 @@ estatements_directory="$1"
 search_string="$2"
 expense_reports_directory="$3"
 final_report_filename="combined_application.pdf"
+autoloop=1
 year=2024
 
 if [[ "$expense_reports_directory" == *"Cosmolunch"* ]]; then
@@ -237,8 +265,26 @@ else
     mode="other"
 fi
 
-get_date
-output_dir="$expense_reports_directory/$closest_date"
-#censor_transactions
-create_reimbursement_form "$mode"
-combine_pdfs "$output_dir" "$final_report_filename"
+check_pdfgrep
+scan_pdfs "$estatements_directory" "$search_string"
+
+echo "$autoloop"
+
+if [ "$autoloop" -eq 0 ]; then # Case when we don't loop
+  get_date
+  output_dir="$expense_reports_directory/$closest_date"
+  run_python_scripts "$mode" "$output_dir" "$final_report_filename"
+else # Case when we do autoloop
+  i=0
+  flag_to_stop_autoloop=0
+  while [ "$flag_to_stop_autoloop" -eq 0 ]; do
+	echo "Looking at the case $i"
+    get_date_autoloop "$i"
+    output_dir="$expense_reports_directory/$closest_date"
+    run_python_scripts "$mode" "$output_dir" "$final_report_filename"
+	i=$((i+1))
+	echo ""
+	echo ""
+	#read -p "wait..." n
+  done
+fi

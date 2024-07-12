@@ -4,7 +4,7 @@ import logging
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 from PIL import Image
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def resize_and_rotate_page(page, target_width, target_height, rotate=False):
