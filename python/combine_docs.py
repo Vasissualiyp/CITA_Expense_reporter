@@ -68,6 +68,16 @@ def resize_and_rotate_page(page, target_width, target_height, rotate=False):
 
     return target_width, target_height
 
+def convert_images_to_pdf(file_path, pdf_path, page_width, page_height, dpi=300):
+    image = Image.open(file_path)
+    image = image.convert("RGB")
+    # Calculate the new dimensions based on DPI
+    width, height = image.size
+    width_in_points = (width / dpi) * 72
+    height_in_points = (height / dpi) * 72
+    image = image.resize((int(width_in_points), int(height_in_points)), Image.LANCZOS)
+    image.save(pdf_path, dpi=(dpi, dpi))
+
 def add_pdf_to_merger(merger, file_path, width, height, rotate=False):
     logging.info(f"Processing file: {file_path}")
     try:
@@ -117,11 +127,8 @@ def combine_files_to_pdf(directory, output_filename):
     # Convert JPG to PDF and add
     for file in ["Signup_sheet.jpg", "creditcard/1-censored.jpg"]:
         file_path = os.path.join(directory, file)
-        image = Image.open(file_path)
-        image = image.convert("RGB")
         pdf_path = file_path.replace(".jpg", ".pdf")
-        image = image.resize((int(page_width), int(page_height)), Image.LANCZOS)
-        image.save(pdf_path)
+        convert_images_to_pdf(file_path, pdf_path, page_width, page_height)
         add_pdf_to_merger(merger, pdf_path, page_width, page_height)
         os.remove(pdf_path)  # Remove the temporary PDF file
     
@@ -130,6 +137,18 @@ def combine_files_to_pdf(directory, output_filename):
     merger.write(output_path)
     merger.close()
     logging.info(f"Combined PDF saved as: {output_path}")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python combine_files_to_pdf.py <directory> <output_filename>")
+        sys.exit(1)
+    directory = sys.argv[1]
+    output_filename = sys.argv[2]
+    try:
+        combine_files_to_pdf(directory, output_filename)
+    except Exception as e:
+        logging.error(f"An error occurred: {str(e)}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

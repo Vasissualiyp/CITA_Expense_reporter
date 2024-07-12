@@ -169,7 +169,7 @@ convert_pdfs_to_jpegs() {
         base_name=$(basename "$pdf_file" .pdf)
 
         # Convert the PDF to JPEG
-        pdftoppm -jpeg -r "$quality" "$pdf_file" "$output_dir/$base_name"
+        pdftoppm -jpg -r "$quality" "$pdf_file" "$output_dir/$base_name"
 
         # Rename the output file from *.jpg to the desired name
         mv "$output_dir/$base_name-1.jpg" "$output_dir/$base_name.jpg"
@@ -210,7 +210,7 @@ get_date_autoloop() {
 
 censor_transactions() {
   # Now copy the transaction page to the expense reports directory
-  jpg_quality=600
+  jpg_quality=300
   creditcard_out_dir="$output_dir/creditcard"
   mkdir "$creditcard_out_dir"
   pdftk "$selected_file" cat "$selected_page" output "$creditcard_out_dir/1.pdf" 1> /dev/null 2> /dev/null
