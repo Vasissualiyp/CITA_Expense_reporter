@@ -20,11 +20,14 @@
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
 			pdfgrep
-            (python3.withPackages (ps: with ps; [
+			cargo
+			rustc
+            (python311.withPackages (ps: with ps; [
               tkinter
               pillow
 			  reportlab
 			  pypdf2
+			  pdf2image
             ]))
           ];
         };
