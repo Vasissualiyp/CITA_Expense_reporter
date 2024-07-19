@@ -245,7 +245,7 @@ run_python_scripts() {
   mode="$1"
   output_dir="$2"
   final_report_filename="$3"
-  #censor_transactions
+  censor_transactions
   create_reimbursement_form "$mode"
   combine_pdfs "$output_dir" "$final_report_filename"
 }
@@ -264,7 +264,7 @@ search_string="$2"
 expense_reports_directory="$3"
 final_report_filename="combined_application.pdf"
 python_dir=$(pwd)/python
-autoloop=1
+autoloop=0
 year=2024
 
 if [[ "$expense_reports_directory" == *"Cosmolunch"* ]]; then

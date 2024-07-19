@@ -11,6 +11,7 @@ This project provides a set of scripts and tools to generate expense reports for
   - `Pillow`
   - `reportlab`
   - `PyPDF2`
+  - `pdf2image`
 - Nix (for setting up the development environment)
 
 ## Installation
@@ -24,6 +25,7 @@ This project provides a set of scripts and tools to generate expense reports for
     ```sh
     nix develop
     ```
+	
 2b. (If not using Nix) **Install the dependencies**
 
     Set up your python environment with dependencies listed above.
@@ -61,15 +63,16 @@ Run the `create_expense.sh` script to generate an expense report. This script pe
 ./create_expense.sh /path/to/statements "PIZZAIOLO" /path/to/expense_reports
 ```
 
-What is important is that the code is written for RBC (Royal Bank Canada) eStatements, and other banks' formats
-haven't been yet tested. Feel free to open a pull request and add yours!
+What is important is that the code is written for RBC (Royal Bank Canada) eStatements, 
+and other banks' formats haven't been yet tested. 
+Feel free to open a pull request and add yours!
 
 ### Scripts and Their Functions
 
 #### `flake.nix`
 Sets up the development environment using Nix, including the required dependencies.
 
-#### `create_expense.sh`
+#### `create_expense.sh/create_expense.py`
 Main script to create the expense report.
 - Checks for `pdfgrep` installation.
 - Scans PDF files for a search string.
