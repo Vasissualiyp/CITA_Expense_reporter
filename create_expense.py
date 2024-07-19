@@ -36,9 +36,16 @@ def scan_pdfs(state, directory, search_string):
                     pdf = PdfReader(file_path)
                     for page_num, page in enumerate(pdf.pages, 1):
                         text = page.extract_text()
-                        if search_string in text:
-                            snippet = text[max(0, text.index(search_string) - 50):text.index(search_string) + 50]
-                            state.results.append(f"{file_path}: Page {page_num}: {snippet}")
+                        lines = text.split('\n')
+                        for i, line in enumerate(lines):
+                            if search_string in line:
+                                # Get the full transaction line
+                                transaction_line = line.strip()
+                                # Get the next line for the amount if it exists
+                                amount_line = lines[i+1].strip() if i+1 < len(lines) else ""
+                                # Combine the transaction line and amount line
+                                full_transaction = f"{transaction_line} {amount_line}"
+                                state.results.append(f"{file_path}: Page {page_num}: {full_transaction}")
                 except Exception as e:
                     print(f"Error processing {file_path}: {str(e)}")
 
@@ -85,6 +92,7 @@ def extract_date_info(state):
     amount_match = re.search(r'\$(\d+(\.\d{2})?)', state.selected_result)
     if amount_match:
         state.selected_amount = amount_match.group(1)
+        print(f"Here is the amount found: {state.selected_amount}")
 
 def find_first_date_after(year, month, day, directory):
     input_date = datetime(int(year), int(month), int(day))
