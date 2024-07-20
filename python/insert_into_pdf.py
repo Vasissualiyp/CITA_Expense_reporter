@@ -82,7 +82,7 @@ def sum_floats_from_pdf_array(pdf_array):
     total_sum_string = '$' + str(total_sum)
     return total_sum_string
 
-def main(mode, money_spent, date_str, input_file, output_file):
+def insert_into_pdf(mode, money_spent, date_str, input_file, output_file):
     
     # Put provided date into a nice format
     date = convert_date_to_string(date_str)
@@ -148,4 +148,4 @@ if __name__ == "__main__":
     input_file = sys.argv[4] # Base pdf which will be altered
     output_file = sys.argv[5] # Where to save the resulting pdf
 
-    main(mode, money_spent, date, input_file, output_file)
+    insert_into_pdf(mode, money_spent, date, input_file, output_file)

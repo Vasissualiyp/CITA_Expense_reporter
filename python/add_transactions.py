@@ -81,7 +81,7 @@ def extract_amount(transaction_str):
         return f"${parts[-1]}"
     return ""
 
-def main(estatements_dir, csv_file):
+def add_transactions_from_estatements(estatements_dir, csv_file):
     finder = TransactionFinder(estatements_dir)
     adder = TransactionAdder(csv_file)
 
@@ -118,10 +118,9 @@ def main(estatements_dir, csv_file):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python script.py <estatements_directory> <csv_file>", file=sys.stderr)
+        print("Usage: python add_transactions.py <estatements_directory> <csv_file>", file=sys.stderr)
         sys.exit(1)
     
     estatements_dir = sys.argv[1]
     csv_file = sys.argv[2]
-    main(estatements_dir, csv_file)
-
+    add_transactions_from_estatements(estatements_dir, csv_file)
