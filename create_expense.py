@@ -6,6 +6,8 @@ from datetime import datetime
 import re
 from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path
+import python.add_transactions 
+import python.insert_into_pdf 
 from PIL import Image
 import shutil
 
@@ -171,27 +173,7 @@ def run_python_scripts(state, mode, output_dir, final_report_filename, python_di
     create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path)
     combine_pdfs(output_dir, final_report_filename, python_dir)
 
-def main():
-    parser = argparse.ArgumentParser(description="Process PDF documents for expense reports.")
-    parser.add_argument("estatements_directory", help="Directory containing eStatements PDFs")
-    parser.add_argument("search_string", help="String to search for in PDFs")
-    parser.add_argument("expense_reports_directory", help="Directory for expense reports")
-    parser.add_argument("--autoloop", action="store_true", help="Enable autoloop mode")
-    args = parser.parse_args()
-
-    check_dependencies()
-    
-    state = ScriptState()
-    scan_pdfs(state, args.estatements_directory, args.search_string)
-    present_results(state, args.search_string)
-
-    year = "2024"  # You might want to make this configurable
-    final_report_filename = "combined_application.pdf"
-    python_dir = os.path.join(os.getcwd(), "python")
-    signed_reimbursement_form_path = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
-
-    mode = "cosmolunch" if "Cosmolunch" in args.expense_reports_directory else "other"
-
+def process_transactions_cosmolunch(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path):
     if not args.autoloop:
         prompt_user_selection(state)
         extract_date_info(state)
@@ -218,6 +200,65 @@ def main():
             run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, signed_reimbursement_form_path)
             i += 1
             print("\n")
+
+def process_transactions_custom(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path):
+    if not args.autoloop:
+        prompt_user_selection(state)
+        extract_date_info(state)
+        print(f"Selected occurrence found in file '{state.selected_file}' on page {state.selected_page}.")
+        print(f"Transaction Month: {state.selected_month}, Day: {state.selected_day}")
+        print(f"Money amount: ${state.selected_amount}")
+        closest_date = find_first_date_after(year, state.selected_month, state.selected_day, args.expense_reports_directory)
+        print(f"Date of cosmolunch: {closest_date}")
+        output_dir = os.path.join(args.expense_reports_directory, closest_date)
+        run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, signed_reimbursement_form_path)
+    else:
+        i = 0
+        while True:
+            print(f"Looking at the case {i}")
+            if autoloop_selection(state, i) == 1:
+                break
+            extract_date_info(state)
+            print(f"Selected occurrence found in file '{state.selected_file}' on page {state.selected_page}.")
+            print(f"Transaction Month: {state.selected_month}, Day: {state.selected_day}")
+            print(f"Money amount: ${state.selected_amount}")
+            closest_date = find_first_date_after(year, state.selected_month, state.selected_day, args.expense_reports_directory)
+            print(f"Date of cosmolunch: {closest_date}")
+            output_dir = os.path.join(args.expense_reports_directory, closest_date)
+            run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, signed_reimbursement_form_path)
+            i += 1
+            print("\n")
+
+def main():
+    parser = argparse.ArgumentParser(description="Process PDF documents for expense reports.")
+    parser.add_argument("estatements_directory", help="Directory containing eStatements PDFs")
+    parser.add_argument("search_string", help="String to search for in PDFs")
+    parser.add_argument("expense_reports_directory", help="Directory for expense reports")
+    parser.add_argument("--autoloop", action="store_true", help="Enable autoloop mode")
+    args = parser.parse_args()
+
+    check_dependencies()
+    
+    state = ScriptState()
+    scan_pdfs(state, args.estatements_directory, args.search_string)
+    present_results(state, args.search_string)
+
+    year = "2024"  # You might want to make this configurable
+    final_report_filename = "combined_application.pdf"
+    python_dir = os.path.join(os.getcwd(), "python")
+    signed_reimbursement_form_path = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
+
+    mode = "cosmolunch" if "Cosmolunch" in args.expense_reports_directory else "other"
+    #mode = "test"
+    mode = ""
+
+    if mode == "cosmolunch": 
+        process_transactions_cosmolunch(state, year, args, mode, final_report_filename, 
+                                        python_dir, signed_reimbursement_form_path)
+    elif mode == "custom": # Enter transactions from the receipts, and generate the report based on the eStatements
+        process_transactions_custom(state, year, args, mode, final_report_filename, 
+                                        python_dir, signed_reimbursement_form_path)
+
 
 if __name__ == "__main__":
     main()
