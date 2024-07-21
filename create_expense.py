@@ -8,7 +8,7 @@ from PIL import Image
 import shutil
 import re
 from PyPDF2 import PdfReader, PdfWriter
-import python.add_transactions 
+from python.add_transactions import add_transactions_from_estatements
 from python.insert_into_pdf import insert_into_pdf
 from python.censor_transactions import censor_transactions_mainloop
 
@@ -210,20 +210,117 @@ def process_transactions_cosmolunch(state, year, args, mode, final_report_filena
             i += 1
             print("\n")
 
+#-----------------------
+
 def process_transactions_custom(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path):
-    if not args.autoloop:
-        prompt_user_selection(state)
-        extract_date_info(state)
-        print(f"Selected occurrence found in file '{state.selected_file}' on page {state.selected_page}.")
-        print(f"Transaction Month: {state.selected_month}, Day: {state.selected_day}")
-        print(f"Money amount: ${state.selected_amount}")
-        closest_date = find_first_date_after(year, state.selected_month, state.selected_day, args.expense_reports_directory)
-        print(f"Date of cosmolunch: {closest_date}")
-        output_dir = os.path.join(args.expense_reports_directory, closest_date)
-        run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, signed_reimbursement_form_path)
-    else:
-        print("The autoloop for custom transaction hasn't been set up yet")
-        sys.exit(1)
+    # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
+    csv_file = 'selected_transactions.csv'
+    add_transactions_from_estatements(args.estatements_directory, csv_file)
+
+    # Step 2: Get unique file+page pairs from CSV
+    unique_pairs = get_unique_file_page_pairs(csv_file)
+
+    # Step 3: Copy unique pairs to creditcards directory
+    output_dir = create_output_directory(args.expense_reports_directory)
+    creditcards_dir = os.path.join(output_dir, 'creditcards')
+    os.makedirs(creditcards_dir, exist_ok=True)
+    copy_unique_pairs_to_directory(unique_pairs, creditcards_dir)
+
+    # Step 4: User interaction for uncensoring transactions
+    transactions = read_transactions_from_csv(csv_file)
+    transactions_to_uncensor = get_transactions_to_uncensor(transactions)
+    run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
+
+    # Step 5: Generate list of files to include
+    all_files = get_all_files_recursively(output_dir)
+    selected_files = user_select_and_order_files(all_files)
+
+    # Step 6: Create reimbursement form
+    create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path)
+
+    # Step 7: Combine selected files into final report
+    combine_selected_files(selected_files, output_dir, final_report_filename)
+
+
+def get_unique_file_page_pairs(csv_filename):
+    unique_pairs = set()
+    with open(csv_filename, 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            unique_pairs.add((row['file'], row['page']))
+    return unique_pairs
+
+def create_output_directory(expense_reports_directory):
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    output_dir = os.path.join(expense_reports_directory, current_date)
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
+
+def copy_unique_pairs_to_directory(unique_pairs, target_dir):
+    for file_path, page_num in unique_pairs:
+        pdf_reader = PdfReader(file_path)
+        pdf_writer = PdfWriter()
+        pdf_writer.add_page(pdf_reader.pages[int(page_num) - 1])
+        output_filename = f"{os.path.basename(file_path)}_{page_num}.pdf"
+        with open(os.path.join(target_dir, output_filename), "wb") as output_pdf:
+            pdf_writer.write(output_pdf)
+
+def read_transactions_from_csv(csv_filename):
+    transactions = []
+    with open(csv_filename, 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            transactions.append(row)
+    return transactions
+
+def get_transactions_to_uncensor(transactions):
+    print("Select transactions to uncensor:")
+    for i, transaction in enumerate(transactions):
+        print(f"[{i}] {transaction['month']}-{transaction['day']}: ${transaction['amount']}")
+    selections = input("Enter the numbers of transactions to uncensor (comma-separated): ")
+    return [transactions[int(i)] for i in selections.split(',')]
+
+def run_transaction_censorer(creditcards_dir, transactions_to_uncensor):
+    for transaction in transactions_to_uncensor:
+        image_name = f"{os.path.basename(transaction['file'])}_{transaction['page']}-1.jpg"
+        image_path = os.path.join(creditcards_dir, image_name)
+        print(f"Please uncensor the transaction from {transaction['month']}-{transaction['day']} for ${transaction['amount']}")
+        censor_transactions_mainloop(image_path)
+
+def get_all_files_recursively(directory):
+    all_files = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith('.pdf'):
+                all_files.append(os.path.join(root, file))
+    return all_files
+
+def user_select_and_order_files(all_files):
+    print("Available files:")
+    for i, file in enumerate(all_files):
+        print(f"[{i}] {file}")
+    
+    # Pseudocode: Open vim for user to edit and reorder files
+    # selected_files = open_vim_for_user_to_edit(all_files)
+    
+    # For now, we'll use a simple input method
+    selections = input("Enter the numbers of files to include (comma-separated): ")
+    selected_files = [all_files[int(i)] for i in selections.split(',')]
+    return selected_files
+
+def combine_selected_files(selected_files, output_dir, final_report_filename):
+    pdf_writer = PdfWriter()
+    for file in selected_files:
+        pdf_reader = PdfReader(file)
+        for page in pdf_reader.pages:
+            pdf_writer.add_page(page)
+    
+    output_path = os.path.join(output_dir, final_report_filename)
+    with open(output_path, "wb") as output_pdf:
+        pdf_writer.write(output_pdf)
+    print(f"Combined PDF saved to: {output_path}")
+
+#-----------------------
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Process PDF documents for expense reports.")
@@ -241,8 +338,6 @@ def create_expense_main():
     check_dependencies()
     
     state = ScriptState()
-    scan_pdfs(state, args.estatements_directory, args.search_string)
-    present_results(state, args.search_string)
 
     year = "2024"  # You might want to make this configurable
     final_report_filename = "combined_application.pdf"
@@ -251,12 +346,16 @@ def create_expense_main():
 
     mode = "cosmolunch" if "Cosmolunch" in args.expense_reports_directory else "other"
     #mode = "test"
-    #mode = "custom"
+    mode = "custom"
 
     if mode == "cosmolunch": 
+        print("Cosmolunch mode")
+        scan_pdfs(state, args.estatements_directory, args.search_string)
+        present_results(state, args.search_string)
         process_transactions_cosmolunch(state, year, args, mode, final_report_filename, 
                                         python_dir, signed_reimbursement_form_path)
     elif mode == "custom": # Enter transactions from the receipts, and generate the report based on the eStatements
+        print("Custom mode")
         process_transactions_custom(state, year, args, mode, final_report_filename, 
                                         python_dir, signed_reimbursement_form_path)
 
