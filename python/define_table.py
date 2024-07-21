@@ -1,4 +1,4 @@
-from full_reimbursement import define_table
+from python.full_reimbursement import define_table
 def define_reimbursement_table():
 
     # Define reimbursement table here, by passing (row_number,row_ycoord0 tuples 

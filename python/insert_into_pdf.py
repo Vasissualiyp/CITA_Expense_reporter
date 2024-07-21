@@ -1,8 +1,8 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from datetime import datetime
-from full_reimbursement import define_table, getrow, generate_texts, main_spending
-from define_table import define_reimbursement_table
+from python.full_reimbursement import define_table, getrow, generate_texts, main_spending
+from python.define_table import define_reimbursement_table
 import PyPDF2
 import io
 import sys
