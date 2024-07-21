@@ -46,8 +46,8 @@ Create a configuration file `config.json` in the `config` directory with the fol
 ```
 
 ## Usage
-### Generate Expense Report
-Run the `create_expense.sh` script to generate an expense report. This script performs the following steps:
+### Generate Expense Report (Cosmolunch)
+Run the `python create_expense.py` script to generate an expense report. This script performs the following steps:
 1. Searches PDF eStatements for a specified transaction.
 2. Extracts transaction information (date, amount).
 3. Finds the first cosmolunch date after the transaction date.
@@ -58,6 +58,7 @@ Run the `create_expense.sh` script to generate an expense report. This script pe
 ./create_expense.sh <ESTATEMENTS_DIRECTORY> <SEARCH_STRING> <EXPENSE_REPORTS_DIRECTORY>
 ```
 
+
 ### Example
 ```sh
 ./create_expense.sh /path/to/statements "PIZZAIOLO" /path/to/expense_reports
@@ -66,6 +67,9 @@ Run the `create_expense.sh` script to generate an expense report. This script pe
 What is important is that the code is written for RBC (Royal Bank Canada) eStatements, 
 and other banks' formats haven't been yet tested. 
 Feel free to open a pull request and add yours!
+
+Another very important thing is that the script will automatically choose a "cosmolunch" mode if 
+your expense reports path contains a string "Cosmolunch". Otherwise it will default to "other".
 
 ### Scripts and Their Functions
 

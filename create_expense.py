@@ -3,14 +3,14 @@ import sys
 import subprocess
 import argparse
 from datetime import datetime
+from pdf2image import convert_from_path
+from PIL import Image
+import shutil
 import re
 from PyPDF2 import PdfReader, PdfWriter
-from pdf2image import convert_from_path
 import python.add_transactions 
 from python.insert_into_pdf import insert_into_pdf
 from python.censor_transactions import censor_transactions_mainloop
-from PIL import Image
-import shutil
 
 class ScriptState:
     def __init__(self):
@@ -98,6 +98,10 @@ def extract_date_info(state):
         print(f"Here is the amount found: {state.selected_amount}")
 
 def find_first_date_after(year, month, day, directory):
+    """
+    Finds date for cosmolunch occurence in <directory>, given the date of the transaction, related 
+    to the cosmolunch on <year>-<month>-<day>
+    """
     input_date = datetime(int(year), int(month), int(day))
     closest_date = None
 
@@ -127,7 +131,10 @@ def convert_pdfs_to_jpegs(output_dir, quality):
                 image.save(os.path.join(output_dir, f"{base_name}-{i+1}.jpg"), 'JPEG')
             os.remove(pdf_path)
 
-def censor_transactions(state, output_dir, python_dir):
+def censor_single_transaction(state, output_dir, python_dir):
+    """
+    Runs the transactions censorer for a single transaction
+    """
     creditcard_out_dir = os.path.join(output_dir, "creditcard")
     os.makedirs(creditcard_out_dir, exist_ok=True)
 
@@ -171,7 +178,7 @@ def combine_pdfs(output_dir, filename, python_dir):
     shutil.rmtree(tmp_dir)
 
 def run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, signed_reimbursement_form_path):
-    censor_transactions(state, output_dir, python_dir)
+    censor_single_transaction(state, output_dir, python_dir)
     create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path)
     combine_pdfs(output_dir, final_report_filename, python_dir)
 
@@ -227,7 +234,7 @@ def parse_arguments():
     args = parser.parse_args()
     return args
 
-def main():
+def create_expense_main():
 
     args = parse_arguments()
 
@@ -255,4 +262,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    create_expense_main()
