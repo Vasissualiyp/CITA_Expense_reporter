@@ -8,6 +8,7 @@ from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path
 import python.add_transactions 
 import python.insert_into_pdf 
+from python.censor_transactions import censor_transactions_mainloop
 from PIL import Image
 import shutil
 
@@ -141,11 +142,13 @@ def censor_transactions(state, output_dir, python_dir):
     convert_pdfs_to_jpegs(creditcard_out_dir, 300)
 
     print(f"\n\nNow you have to only enable transaction for {state.selected_month}-{state.selected_day}:")
-    subprocess.run(["python", os.path.join(python_dir, "censor_transactions.py"), 
-                    os.path.join(creditcard_out_dir, "1-1.jpg")])
+    image_name = "1-1.jpg"
+    image_name_full = image_name + ".jpg"
+    image_path = os.path.join(creditcard_out_dir, image_name_full)
+    censor_transactions_mainloop(image_path)
 
     for file in os.listdir(creditcard_out_dir):
-        if file.endswith((".pdf", ".jpg")) and not file.startswith("1-1"):
+        if file.endswith((".pdf", ".jpg")) and not file.startswith(image_name):
             os.remove(os.path.join(creditcard_out_dir, file))
 
 def create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path):
@@ -213,29 +216,21 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
         output_dir = os.path.join(args.expense_reports_directory, closest_date)
         run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, signed_reimbursement_form_path)
     else:
-        i = 0
-        while True:
-            print(f"Looking at the case {i}")
-            if autoloop_selection(state, i) == 1:
-                break
-            extract_date_info(state)
-            print(f"Selected occurrence found in file '{state.selected_file}' on page {state.selected_page}.")
-            print(f"Transaction Month: {state.selected_month}, Day: {state.selected_day}")
-            print(f"Money amount: ${state.selected_amount}")
-            closest_date = find_first_date_after(year, state.selected_month, state.selected_day, args.expense_reports_directory)
-            print(f"Date of cosmolunch: {closest_date}")
-            output_dir = os.path.join(args.expense_reports_directory, closest_date)
-            run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, signed_reimbursement_form_path)
-            i += 1
-            print("\n")
+        print("The autoloop for custom transaction hasn't been set up yet")
+        sys.exit(1)
 
-def main():
+def parse_arguments():
     parser = argparse.ArgumentParser(description="Process PDF documents for expense reports.")
     parser.add_argument("estatements_directory", help="Directory containing eStatements PDFs")
     parser.add_argument("search_string", help="String to search for in PDFs")
     parser.add_argument("expense_reports_directory", help="Directory for expense reports")
     parser.add_argument("--autoloop", action="store_true", help="Enable autoloop mode")
     args = parser.parse_args()
+    return args
+
+def main():
+
+    args = parse_arguments()
 
     check_dependencies()
     
@@ -250,7 +245,7 @@ def main():
 
     mode = "cosmolunch" if "Cosmolunch" in args.expense_reports_directory else "other"
     #mode = "test"
-    mode = ""
+    mode = "custom"
 
     if mode == "cosmolunch": 
         process_transactions_cosmolunch(state, year, args, mode, final_report_filename, 

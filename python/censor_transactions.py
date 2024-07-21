@@ -190,6 +190,10 @@ class ImageViewer:
         self.save_image()
         self.master.quit()
 
+def censor_transactions_mainloop(image_path):
+    root = tk.Tk()
+    app = ImageViewer(root, image_path)
+    root.mainloop()
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -197,6 +201,4 @@ if __name__ == "__main__":
         sys.exit(1)
     
     image_path = sys.argv[1]
-    root = tk.Tk()
-    app = ImageViewer(root, image_path)
-    root.mainloop()
+    censor_transactions_mainloop(image_path)
