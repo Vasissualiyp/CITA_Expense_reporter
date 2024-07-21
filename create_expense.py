@@ -7,7 +7,7 @@ import re
 from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path
 import python.add_transactions 
-import python.insert_into_pdf 
+from python.insert_into_pdf import insert_into_pdf
 from python.censor_transactions import censor_transactions_mainloop
 from PIL import Image
 import shutil
@@ -142,7 +142,7 @@ def censor_transactions(state, output_dir, python_dir):
     convert_pdfs_to_jpegs(creditcard_out_dir, 300)
 
     print(f"\n\nNow you have to only enable transaction for {state.selected_month}-{state.selected_day}:")
-    image_name = "1-1.jpg"
+    image_name = "1-1"
     image_name_full = image_name + ".jpg"
     image_path = os.path.join(creditcard_out_dir, image_name_full)
     censor_transactions_mainloop(image_path)
@@ -154,8 +154,7 @@ def censor_transactions(state, output_dir, python_dir):
 def create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path):
     current_date = datetime.now().strftime("%Y-%m-%d")
     application_file = os.path.join(output_dir, "application.pdf")
-    subprocess.run(["python", os.path.join(python_dir, "insert_into_pdf.py"), 
-                    mode, state.selected_amount, current_date, signed_reimbursement_form_path, application_file])
+    insert_into_pdf(mode, state.selected_amount, current_date, signed_reimbursement_form_path, application_file)
     print(f"Saved to: {application_file}")
 
 def combine_pdfs(output_dir, filename, python_dir):
@@ -166,7 +165,7 @@ def combine_pdfs(output_dir, filename, python_dir):
     subprocess.run(["pdflatex", f"../{output_dir}/description.tex"])
     shutil.move("description.pdf", f"../{output_dir}")
     
-    subprocess.run(["python", os.path.join(python_dir, "combine_docs.py"), f"../{output_dir}", filename])
+    combine_files_to_pdf_with_exceptions(f"../{output_dir}", filename)
     
     os.chdir("..")
     shutil.rmtree(tmp_dir)
@@ -245,7 +244,7 @@ def main():
 
     mode = "cosmolunch" if "Cosmolunch" in args.expense_reports_directory else "other"
     #mode = "test"
-    mode = "custom"
+    #mode = "custom"
 
     if mode == "cosmolunch": 
         process_transactions_cosmolunch(state, year, args, mode, final_report_filename, 

@@ -139,12 +139,7 @@ def combine_files_to_pdf(directory, output_filename):
     merger.close()
     logging.info(f"Combined PDF saved as: {output_path}")
 
-if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python combine_files_to_pdf.py <directory> <output_filename>")
-        sys.exit(1)
-    directory = sys.argv[1]
-    output_filename = sys.argv[2]
+def combine_files_to_pdf_with_exceptions(directory, output_filename):
     try:
         combine_files_to_pdf(directory, output_filename)
     except Exception as e:
@@ -157,8 +152,4 @@ if __name__ == "__main__":
         sys.exit(1)
     directory = sys.argv[1]
     output_filename = sys.argv[2]
-    try:
-        combine_files_to_pdf(directory, output_filename)
-    except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
-        sys.exit(1)
+    combine_files_to_pdf_with_exceptions(directory, output_filename)
