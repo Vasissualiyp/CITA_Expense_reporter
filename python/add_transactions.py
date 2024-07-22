@@ -41,8 +41,11 @@ class TransactionFinder:
                 if file.endswith('.pdf'):
                     file_path = os.path.join(root, file)
                     print(f"Scanning file: {file_path}", file=sys.stderr)
-                    transactions.extend(self._scan_pdf(file_path, search_terms))
+                    file_transactions = self._scan_pdf(file_path, search_terms)
+                    transactions.extend(file_transactions)
+                    print(f"Found {len(file_transactions)} transactions in this file", file=sys.stderr)
 
+        print(f"Total transactions found: {len(transactions)}", file=sys.stderr)
         return transactions
 
     def _scan_pdf(self, file_path, search_terms):
@@ -55,21 +58,51 @@ class TransactionFinder:
                 for i, line in enumerate(lines):
                     if any(term in line.upper() for term in search_terms):
                         print(f"Found matching term in line: {line}", file=sys.stderr)
-                        transaction = self._parse_transaction(line, lines[i+1] if i+1 < len(lines) else "")
+                        transaction = self._parse_transaction(lines, i)                        
                         if transaction:
                             transactions.append((file_path, page_num, transaction))
                             print(f"Added transaction: {transaction}", file=sys.stderr)
+                        else:
+                            print(f"Failed to parse transaction from line: {line}", file=sys.stderr)
         except Exception as e:
             print(f"Error processing {file_path}: {str(e)}", file=sys.stderr)
         return transactions
 
-    def _parse_transaction(self, line, next_line):
-        if '$' in line:
-            return line.strip()
-        elif '$' in next_line:
-            return f"{line.strip()} {next_line.strip()}"
-        return None
+    def _parse_transaction(self, lines, start_index):
+        transaction = lines[start_index].strip()
+        i = start_index
 
+        # Continue to the next lines until we find a line with a $
+        while i + 1 < len(lines) and '$' not in lines[i]:
+            i += 1
+            transaction += ' ' + lines[i].strip()
+
+        print("This is the transaction string:")
+        print(transaction)
+
+        print(f"Parsing transaction: {transaction}", file=sys.stderr)
+
+        # Extract date
+        date_match = re.search(r'\b([A-Z]{3})\s+(\d{2})\b', transaction)
+        if date_match:
+            date = f"{date_match.group(1)} {date_match.group(2)}"
+            print(f"Found date: {date}", file=sys.stderr)
+        else:
+            print("Failed to extract date", file=sys.stderr)
+            return None
+
+        # Extract amount
+        amount_match = re.search(r'(\d*\$\d+\.\d{2})', transaction)
+        if amount_match:
+            full_amount = amount_match.group(1)
+            amount = full_amount.split('$')[-1]
+            print(f"Found amount: ${amount}", file=sys.stderr)
+        else:
+            print("Failed to extract amount", file=sys.stderr)
+            return None
+
+        return f"{date} ${amount} - {transaction}"
+    
 class TransactionAdder:
     def __init__(self, csv_file):
         self.csv_file = csv_file
@@ -115,14 +148,20 @@ def add_transactions_from_estatements(estatements_dir, csv_file):
             selected_transactions = [transactions[i] for i in indices if 0 <= i < len(transactions)]
 
         for file, page, transaction_details in selected_transactions:
-            parts = transaction_details.split()
-            date_formatted = format_date(parts[0] + " " + parts[1])
-            amount = extract_amount(transaction_details)
-            trans = Transaction(date_formatted, file, page, amount)
-            adder.add_transaction(trans)
-            print(f"Added: {transaction_details}")
+            parts = transaction_details.split(' - ', 1)
+            if len(parts) == 2:
+                date_amount, _ = parts
+                date, amount = date_amount.rsplit('$', 1)
+                date_formatted = format_date(date.strip())
+                amount = amount.strip()
+                trans = Transaction(date_formatted, file, page, amount)
+                adder.add_transaction(trans)
+                print(f"Added: {transaction_details}")
+            else:
+                print(f"Failed to parse transaction details: {transaction_details}")
 
     print("Transaction adding complete. Goodbye!")
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python add_transactions.py <estatements_directory> <csv_file>", file=sys.stderr)

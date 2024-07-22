@@ -210,7 +210,7 @@ def process_transactions_cosmolunch(state, year, args, mode, final_report_filena
             i += 1
             print("\n")
 
-#-----------------------
+#----------------------------------------------
 
 def process_transactions_custom(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path):
     # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
@@ -320,7 +320,7 @@ def combine_selected_files(selected_files, output_dir, final_report_filename):
         pdf_writer.write(output_pdf)
     print(f"Combined PDF saved to: {output_path}")
 
-#-----------------------
+#----------------------------------------------
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Process PDF documents for expense reports.")
