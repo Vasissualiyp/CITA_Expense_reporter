@@ -4,16 +4,15 @@ import sys
 import re
 from datetime import datetime, timedelta
 from PyPDF2 import PdfReader
-from python.full_reimbursement import define_categories
+from python.full_reimbursement import define_categories, category_to_row
 from python.define_table import define_reimbursement_table
 
 class Transaction:
-    def __init__(self, date, filepath, page, amount, category=None, subcategory=None):
+    def __init__(self, date, filepath, page, amount, subcategory=None):
         self.date = date
         self.filepath = filepath
         self.page = page
         self.amount = amount
-        self.category = category
         self.subcategory = subcategory
 
     def to_csv_row(self):
@@ -22,8 +21,7 @@ class Transaction:
             'file': self.filepath,
             'page': self.page,
             'amount': self.amount,
-            'category': self.category,
-            'subcategory': self.subcategory
+            'subcategory': self.subcategory  # Save subcategory as a number
         }
 
     @property
@@ -133,7 +131,7 @@ class TransactionAdder:
     def add_transaction(self, transaction):
         file_exists = os.path.isfile(self.csv_file)
         with open(self.csv_file, 'a', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=['date', 'file', 'page', 'amount', 'category', 'subcategory'])
+            writer = csv.DictWriter(file, fieldnames=['date', 'file', 'page', 'amount', 'subcategory'])
             if not file_exists:
                 writer.writeheader()  # Write the header only if the file doesn't exist
             writer.writerow(transaction.to_csv_row())
@@ -173,7 +171,8 @@ def prompt_category(table_params):
     
     selected_subcategory = selected_category.options[subcategory_selection]
     
-    return selected_category.name, selected_subcategory
+    # Return the subcategory number according to the category_to_row dictionary
+    return selected_category.name, category_to_row[selected_subcategory]
 
 def add_transactions_from_estatements(estatements_dir, csv_file):
     finder = TransactionFinder(estatements_dir)
@@ -210,14 +209,14 @@ def add_transactions_from_estatements(estatements_dir, csv_file):
                 date_formatted = format_date(date.strip())
                 amount = amount.strip()
                 
-                category, subcategory = prompt_category(table_params)
+                _, subcategory_number = prompt_category(table_params)
                 
-                trans = Transaction(date_formatted, file, page, amount, category, subcategory)
+                trans = Transaction(date_formatted, file, page, amount, subcategory_number)
                 adder.add_transaction(trans)
-                print(f"Added: {transaction_details} under category {category} and subcategory {subcategory}")
+                print(f"Added: {transaction_details} with subcategory number {subcategory_number}")
             else:
                 print(f"Failed to parse transaction details: {transaction_details}")
-        
+
     print("Transaction adding complete. Goodbye!")
 
 if __name__ == "__main__":
