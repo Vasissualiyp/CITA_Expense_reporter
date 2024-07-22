@@ -13,8 +13,10 @@ from PyPDF2 import PdfReader, PdfWriter, PdfMerger
 from python.add_transactions import add_transactions_from_estatements
 from python.insert_into_pdf import insert_into_pdf
 from python.censor_transactions import censor_transactions_mainloop
+#from create_expense import create_reimbursement_form
 
 def process_transactions_custom(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path):
+    print("We are doing custom transactions now")
     # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
     csv_filename = 'selected_transactions.csv'
     combined_creditcards_filename = 'combined_creditcards.pdf'
@@ -26,6 +28,7 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
 
     # Step 3: Copy unique pairs to creditcards directory
     output_dir = create_output_directory(args.expense_reports_directory)
+    output_dir = os.path.abspath(output_dir)
     creditcards_dir = os.path.join(output_dir, 'creditcards')
     os.makedirs(creditcards_dir, exist_ok=True)
     copy_unique_pairs_to_directory(unique_pairs, creditcards_dir)
@@ -37,15 +40,44 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     #run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
     clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, combined_creditcards_filename)
 
+    # Edit the files ordering in editor of choice
+    editor = 'vim'
+    output_file = 'pdfs_order.txt'
+    pdf_files = list_pdf_files(output_dir)
+    write_pdf_list_to_file(pdf_files, output_file)
+    open_file_in_editor(editor, output_file)
+
     # Step 5: Generate list of files to include
-    all_files = get_all_files_recursively(output_dir)
-    selected_files = user_select_and_order_files(all_files)
+    #all_files = get_all_files_recursively(output_dir)
+    #selected_files = user_select_and_order_files(all_files)
 
     # Step 6: Create reimbursement form
     create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path)
 
     # Step 7: Combine selected files into final report
     combine_selected_files(selected_files, output_dir, final_report_filename)
+
+def list_pdf_files(directory):
+    # Check if directory exists
+    if not os.path.exists(directory):
+        raise FileNotFoundError(f"Directory does not exist: {directory}")
+
+    # Get the list of all files in the specified directory
+    all_files = os.listdir(directory)
+
+    # Filter the list to include only .pdf files and remove the directory path
+    pdf_files = [file for file in all_files if file.lower().endswith('.pdf')]
+
+    return pdf_files
+
+def write_pdf_list_to_file(pdf_files, output_file):
+    with open(output_file, 'w') as f:
+        for pdf in pdf_files:
+            f.write(f"{pdf}\n")
+    print(f"List of PDF files written to {output_file}")
+
+def open_file_in_editor(editor, file_path):
+    subprocess.run([editor, file_path])
 
 def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name, debug=False):
     # Get the absolute path of the directory
