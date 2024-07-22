@@ -234,7 +234,7 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     transactions = read_transactions_from_csv(csv_file)
     transactions_to_uncensor = get_transactions_to_uncensor(transactions)
     #convert_pdfs_to_jpegs(creditcards_dir, 300)
-    run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
+    #run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
     clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, combined_creditcards_filename)
 
     # Step 5: Generate list of files to include
@@ -247,25 +247,29 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     # Step 7: Combine selected files into final report
     combine_selected_files(selected_files, output_dir, final_report_filename)
 
-def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name):
+def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name, debug=False):
     # Get the absolute path of the directory
     abs_directory = os.path.abspath(directory)
-    print(f"Absolute path of the directory: {abs_directory}")
-    print(f"Directory exists before changing: {os.path.exists(abs_directory)}")
+    if debug:
+        print(f"Absolute path of the directory: {abs_directory}")
+        print(f"Directory exists before changing: {os.path.exists(abs_directory)}")
     
     # Change to the specified directory
     os.chdir(abs_directory)
-    print(f'We are in directory {os.getcwd()} now')
+    if debug:
+        print(f'We are in directory {os.getcwd()} now')
     
     # Verify the directory path again
-    print(f"Directory exists after changing: {os.path.exists(abs_directory)}")
+        print(f"Directory exists after changing: {os.path.exists(abs_directory)}")
     
     # Step 1: Remove non-censored files
     for filename in os.listdir('.'):
-        print(f'File found in directory: {filename}')
+        if debug:
+            print(f'File found in directory: {filename}')
         if os.path.isfile(filename) and 'censored' not in filename:
             os.remove(filename)
-            print(f"Removed: {filename}")
+            if debug:
+                print(f"Removed: {filename}")
     
     ## Step 2: Convert .jpg files to .pdf
     #for filename in os.listdir('.'):
@@ -277,21 +281,29 @@ def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name):
     #        os.remove(image_path)
     #        print(f"Converted {filename} to PDF and removed the original .jpg file.")
     
-    # Step 3: Combine all .pdf files into a single PDF
-    merger = PdfMerger()
+    # Step 3: Combine all .pdf files into a single PDF using PdfWriter
+    writer = PdfWriter()
     for filename in sorted(os.listdir('.')):
         if filename.lower().endswith('.pdf'):
-            merger.append(filename)
-            print(f"Added {filename} to the merger.")
+            file_path = os.path.join('.', filename)
+            reader = PdfReader(file_path)
+            for page in reader.pages:
+                writer.add_page(page)
+            if debug:
+                print(f"Added {filename} to the writer.")
 
-    merger.write(output_pdf_name)
-    merger.close()
+    output_path = os.path.join(abs_directory, output_pdf_name)
+    with open(output_path, 'wb') as output_file:
+        writer.write(output_file)
+    if debug: 
+        print(f"Combined PDF saved to: {output_path}")
 
-    ## Step 4: Remove censored files
-    #for filename in os.listdir('.'):
-    #    if os.path.isfile(filename) and 'censored' in filename:
-    #        os.remove(filename)
-    #        print(f"Removed: {filename}")
+    # Step 4: Remove censored files
+    for filename in os.listdir('.'):
+        if os.path.isfile(filename) and 'censored' in filename:
+            os.remove(filename)
+            if debug:
+                print(f"Removed: {filename}")
     
     print(f"All PDFs combined into {output_pdf_name}")
 
