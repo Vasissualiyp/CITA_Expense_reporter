@@ -1,6 +1,7 @@
 import os
 import csv
 import sys
+import re
 from datetime import datetime, timedelta
 from PyPDF2 import PdfReader
 
@@ -18,26 +19,33 @@ class TransactionFinder:
     def __init__(self, estatements_dir):
         self.estatements_dir = estatements_dir
 
-    def find_transactions(self, target_date):
+    def find_transactions(self, search_term):
         transactions = []
-        target_date = datetime.strptime(target_date, "%m-%d")
-        date_range = [
-            (target_date - timedelta(days=1)).strftime("%b %d").upper(),
-            target_date.strftime("%b %d").upper(),
-            (target_date + timedelta(days=1)).strftime("%b %d").upper()
-        ]
-        print(f"Searching for dates: {date_range}", file=sys.stderr)
+        is_date = re.match(r"\d{2}-\d{2}", search_term)
+
+        if is_date:
+            target_date = datetime.strptime(search_term, "%m-%d")
+            date_range = [
+                (target_date - timedelta(days=1)).strftime("%b %d").upper(),
+                target_date.strftime("%b %d").upper(),
+                (target_date + timedelta(days=1)).strftime("%b %d").upper()
+            ]
+            print(f"Searching for dates: {date_range}", file=sys.stderr)
+            search_terms = date_range
+        else:
+            print(f"Searching for string: {search_term}", file=sys.stderr)
+            search_terms = [search_term.upper()]
 
         for root, _, files in os.walk(self.estatements_dir):
             for file in files:
                 if file.endswith('.pdf'):
                     file_path = os.path.join(root, file)
                     print(f"Scanning file: {file_path}", file=sys.stderr)
-                    transactions.extend(self._scan_pdf(file_path, date_range))
+                    transactions.extend(self._scan_pdf(file_path, search_terms))
 
         return transactions
 
-    def _scan_pdf(self, file_path, date_range):
+    def _scan_pdf(self, file_path, search_terms):
         transactions = []
         try:
             pdf = PdfReader(file_path)
@@ -45,8 +53,8 @@ class TransactionFinder:
                 text = page.extract_text()
                 lines = text.split('\n')
                 for i, line in enumerate(lines):
-                    if any(date in line for date in date_range):
-                        print(f"Found matching date in line: {line}", file=sys.stderr)
+                    if any(term in line.upper() for term in search_terms):
+                        print(f"Found matching term in line: {line}", file=sys.stderr)
                         transaction = self._parse_transaction(line, lines[i+1] if i+1 < len(lines) else "")
                         if transaction:
                             transactions.append((file_path, page_num, transaction))
@@ -58,7 +66,7 @@ class TransactionFinder:
     def _parse_transaction(self, line, next_line):
         if '$' in line:
             return line.strip()
-        elif '$' in next_line and any(keyword in line for keyword in ['APR', 'MAR', 'FEB', 'JAN']):
+        elif '$' in next_line:
             return f"{line.strip()} {next_line.strip()}"
         return None
 
@@ -86,13 +94,13 @@ def add_transactions_from_estatements(estatements_dir, csv_file):
     adder = TransactionAdder(csv_file)
 
     while True:
-        date = input("Enter a transaction posting date (MM-DD) or 'q' to quit: ")
-        if date.lower() == 'q':
+        search_term = input("Enter a transaction posting date (MM-DD) or a search string, or 'q' to quit: ")
+        if search_term.lower() == 'q':
             break
 
-        transactions = finder.find_transactions(date)
+        transactions = finder.find_transactions(search_term)
         if not transactions:
-            print("No transactions found for the given date range.")
+            print("No transactions found for the given search term.")
             continue
 
         print("Found transactions:")
@@ -115,7 +123,6 @@ def add_transactions_from_estatements(estatements_dir, csv_file):
             print(f"Added: {transaction_details}")
 
     print("Transaction adding complete. Goodbye!")
-
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python add_transactions.py <estatements_directory> <csv_file>", file=sys.stderr)
