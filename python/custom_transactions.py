@@ -42,9 +42,10 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
 
     # Edit the files ordering in editor of choice
     editor = 'vim'
-    output_file = 'pdfs_order.txt'
+    output_file = 'pdfs_order.tex'
+    descriptions_file = 'description.tex'
     pdf_files = list_pdf_files(output_dir)
-    write_pdf_list_to_file(pdf_files, output_file)
+    write_pdf_list_to_file(pdf_files, output_dir, descriptions_file, output_file)
     open_file_in_editor(editor, output_file)
 
     # Step 5: Generate list of files to include
@@ -70,11 +71,21 @@ def list_pdf_files(directory):
 
     return pdf_files
 
-def write_pdf_list_to_file(pdf_files, output_file):
+def write_pdf_list_to_file(pdf_files, output_dir, latex_file, output_file):
+    latex_file_path = os.path.join(output_dir, latex_file)
     with open(output_file, 'w') as f:
+        # Write the PDF files list
+        f.write("% Below is the list of pdf files in order that they will appear in the report. Feel free to reorder/delete/add extra files.\n")
         for pdf in pdf_files:
             f.write(f"{pdf}\n")
-    print(f"List of PDF files written to {output_file}")
+        
+        # Write the LaTeX file contents
+        f.write(f"\n% Below is the latex file {latex_file}. This will be a document, included at the start of your reimbursement. Add any extra information that you want, change the order of documents as they appear, etc.\n")
+        
+        with open(latex_file_path, 'r') as latex_f:
+            f.write(latex_f.read())
+    
+    print(f"List of PDF files and LaTeX content written to {output_file}")
 
 def open_file_in_editor(editor, file_path):
     subprocess.run([editor, file_path])
@@ -103,17 +114,7 @@ def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name, debug=
             if debug:
                 print(f"Removed: {filename}")
     
-    ## Step 2: Convert .jpg files to .pdf
-    #for filename in os.listdir('.'):
-    #    if filename.lower().endswith('.jpg'):
-    #        image_path = filename
-    #        pdf_path = image_path.rsplit('.', 1)[0] + '.pdf'
-    #        with Image.open(image_path) as img:
-    #            img.convert('RGB').save(pdf_path)
-    #        os.remove(image_path)
-    #        print(f"Converted {filename} to PDF and removed the original .jpg file.")
-    
-    # Step 3: Combine all .pdf files into a single PDF using PdfWriter
+    # Step 2: Combine all .pdf files into a single PDF using PdfWriter
     writer = PdfWriter()
     for filename in sorted(os.listdir('.')):
         if filename.lower().endswith('.pdf'):
@@ -130,7 +131,7 @@ def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name, debug=
     if debug: 
         print(f"Combined PDF saved to: {output_path}")
 
-    # Step 4: Remove censored files
+    # Step 3: Remove censored files
     for filename in os.listdir('.'):
         if os.path.isfile(filename) and 'censored' in filename:
             os.remove(filename)
