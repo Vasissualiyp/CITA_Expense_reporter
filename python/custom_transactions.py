@@ -20,7 +20,7 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
     csv_filename = 'selected_transactions.csv'
     combined_creditcards_filename = 'combined_creditcards.pdf'
-    csv_file = os.path.join(args.estatements_directory, csv_filename)
+    csv_file = os.path.join(args.expense_reports_directory, csv_filename)
     add_transactions_from_estatements(args.estatements_directory, csv_file)
 
     # Step 2: Get unique file+page pairs from CSV

@@ -32,6 +32,20 @@ category_to_row = {
     "USA / International (Taxi)": 28
 }
 
+def define_categories():
+    categories = [
+        ExpenseCategory("AIRFARE: ECONOMY", ["Travel within Canada (Economy)", "Travel to USA from Ontario (Economy)", "All other Airfare (Economy)"], table_params),
+        ExpenseCategory("AIRFARE: ABOVE-ECONOMY", ["Travel within Canada (Above-Economy)", "Travel to USA from Ontario (Above-Economy)", "All other Airfare (Above-Economy)"], table_params),
+        ExpenseCategory("ACCOMMODATION", ["ON (13%HST)", "PEI, NS, NF, NB (15%HST)", "All other provinces / territories", "USA / International"], table_params),
+        ExpenseCategory("ALLOWANCE", ["Per Diem: Canada", "Per Diem: USA / International", "KMS x 57 cents/km"], table_params),
+        ExpenseCategory("RAIL/BUS", ["Travel within Canada (Rail/Bus)", "Travel outside Canada (Rail/Bus)"], table_params),
+        ExpenseCategory("PUBLIC TRANSIT", ["Travel within or outside Canada (Public Transit)"], table_params),
+        ExpenseCategory("CAR RENTAL", ["ON (13%HST) (Car Rental)", "PEI, NS, NF, NB (15%HST) (Car Rental)", "All other provinces / territories (Car Rental)", "USA / International (Car Rental)"], table_params),
+        ExpenseCategory("MEALS", ["ON (13%HST) (Meals)", "PEI, NS, NF, NB (15%HST) (Meals)", "All other provinces / territories (Meals)", "USA / International (Meals)"], table_params),
+        ExpenseCategory("TAXI", ["ON (13%HST) (Taxi)", "PEI, NS, NF, NB (15%HST) (Taxi)", "All other provinces / territories (Taxi)", "USA / International (Taxi)"], table_params),
+    ]
+    return categories
+
 class ExpenseCategory:
     def __init__(self, name, options, table_params):
         self.name = name
@@ -113,17 +127,7 @@ class OtherExpenses:
 
 def main_spending(table_params, font, size):
     
-    categories = [
-        ExpenseCategory("AIRFARE: ECONOMY", ["Travel within Canada (Economy)", "Travel to USA from Ontario (Economy)", "All other Airfare (Economy)"], table_params),
-        ExpenseCategory("AIRFARE: ABOVE-ECONOMY", ["Travel within Canada (Above-Economy)", "Travel to USA from Ontario (Above-Economy)", "All other Airfare (Above-Economy)"], table_params),
-        ExpenseCategory("ACCOMMODATION", ["ON (13%HST)", "PEI, NS, NF, NB (15%HST)", "All other provinces / territories", "USA / International"], table_params),
-        ExpenseCategory("ALLOWANCE", ["Per Diem: Canada", "Per Diem: USA / International", "KMS x 57 cents/km"], table_params),
-        ExpenseCategory("RAIL/BUS", ["Travel within Canada (Rail/Bus)", "Travel outside Canada (Rail/Bus)"], table_params),
-        ExpenseCategory("PUBLIC TRANSIT", ["Travel within or outside Canada (Public Transit)"], table_params),
-        ExpenseCategory("CAR RENTAL", ["ON (13%HST) (Car Rental)", "PEI, NS, NF, NB (15%HST) (Car Rental)", "All other provinces / territories (Car Rental)", "USA / International (Car Rental)"], table_params),
-        ExpenseCategory("MEALS", ["ON (13%HST) (Meals)", "PEI, NS, NF, NB (15%HST) (Meals)", "All other provinces / territories (Meals)", "USA / International (Meals)"], table_params),
-        ExpenseCategory("TAXI", ["ON (13%HST) (Taxi)", "PEI, NS, NF, NB (15%HST) (Taxi)", "All other provinces / territories (Taxi)", "USA / International (Taxi)"], table_params),
-    ]
+    categories = define_categories()
 
     current_category = 0
     while current_category < len(categories):

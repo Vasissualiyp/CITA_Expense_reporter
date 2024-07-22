@@ -6,19 +6,24 @@ from datetime import datetime, timedelta
 from PyPDF2 import PdfReader
 
 class Transaction:
-    def __init__(self, date, filepath, page, amount):
+    def __init__(self, date, filepath, page, amount, category=None, subcategory=None):
         self.date = date
         self.filepath = filepath
         self.page = page
         self.amount = amount
+        self.category = category
+        self.subcategory = subcategory
 
     def to_csv_row(self):
         return {
             'date': self.date,
             'file': self.filepath,
             'page': self.page,
-            'amount': self.amount
+            'amount': self.amount,
+            'category': self.category,
+            'subcategory': self.subcategory
         }
+
     @property
     def month(self):
         return datetime.strptime(self.date, "%m-%d").strftime("%m")
@@ -28,7 +33,7 @@ class Transaction:
         return datetime.strptime(self.date, "%m-%d").strftime("%d")
 
 class TransactionFinder:
-    def __init__(self, estatements_dir, debug = False):
+    def __init__(self, estatements_dir, debug=False):
         self.estatements_dir = estatements_dir
         self.debug = debug
 
@@ -53,14 +58,14 @@ class TransactionFinder:
             for file in files:
                 if file.endswith('.pdf'):
                     file_path = os.path.join(root, file)
-                    if debug:
+                    if self.debug:
                         print(f"Scanning file: {file_path}", file=sys.stderr)
                     file_transactions = self._scan_pdf(file_path, search_terms)
                     transactions.extend(file_transactions)
-                    if debug:
+                    if self.debug:
                         print(f"Found {len(file_transactions)} transactions in this file", file=sys.stderr)
 
-        if debug:
+        if self.debug:
             print(f"Total transactions found: {len(transactions)}", file=sys.stderr)
         return transactions
 
@@ -74,7 +79,7 @@ class TransactionFinder:
                 for i, line in enumerate(lines):
                     if any(term in line.upper() for term in search_terms):
                         print(f"Found matching term in line: {line}", file=sys.stderr)
-                        transaction = self._parse_transaction(lines, i)                        
+                        transaction = self._parse_transaction(lines, i)
                         if transaction:
                             transactions.append((file_path, page_num, transaction))
                             print(f"Added transaction: {transaction}", file=sys.stderr)
@@ -118,7 +123,7 @@ class TransactionFinder:
             return None
 
         return f"{date} ${amount} - {transaction}"
-    
+
 class TransactionAdder:
     def __init__(self, csv_file):
         self.csv_file = csv_file
@@ -126,7 +131,7 @@ class TransactionAdder:
     def add_transaction(self, transaction):
         file_exists = os.path.isfile(self.csv_file)
         with open(self.csv_file, 'a', newline='') as file:
-            writer = csv.DictWriter(file, fieldnames=['date', 'file', 'page', 'amount'])
+            writer = csv.DictWriter(file, fieldnames=['date', 'file', 'page', 'amount', 'category', 'subcategory'])
             if not file_exists:
                 writer.writeheader()  # Write the header only if the file doesn't exist
             writer.writerow(transaction.to_csv_row())
@@ -148,6 +153,23 @@ def extract_amount(transaction_str):
     if len(parts) > 1:
         return f"${parts[-1]}"
     return ""
+
+def prompt_category():
+    categories = [
+        "Travel within Canada (Economy)", "Travel to USA from Ontario (Economy)", "All other Airfare (Economy)",
+        "Travel within Canada (Above-Economy)", "Travel to USA from Ontario (Above-Economy)", "All other Airfare (Above-Economy)",
+        "ON (13%HST)", "PEI, NS, NF, NB (15%HST)", "All other provinces / territories", "USA / International",
+        "Per Diem: Canada", "Per Diem: USA / International", "KMS x 57 cents/km",
+        "Travel within Canada (Rail/Bus)", "Travel outside Canada (Rail/Bus)", "Travel within or outside Canada (Public Transit)",
+        "ON (13%HST) (Car Rental)", "PEI, NS, NF, NB (15%HST) (Car Rental)", "All other provinces / territories (Car Rental)", "USA / International (Car Rental)",
+        "ON (13%HST) (Meals)", "PEI, NS, NF, NB (15%HST) (Meals)", "All other provinces / territories (Meals)", "USA / International (Meals)",
+        "ON (13%HST) (Taxi)", "PEI, NS, NF, NB (15%HST) (Taxi)", "All other provinces / territories (Taxi)", "USA / International (Taxi)"
+    ]
+    print("\nPlease select a category:")
+    for i, category in enumerate(categories, 1):
+        print(f"{i}. {category}")
+    selection = int(input("Enter the category number: ")) - 1
+    return categories[selection]
 
 def add_transactions_from_estatements(estatements_dir, csv_file):
     finder = TransactionFinder(estatements_dir)
@@ -181,9 +203,11 @@ def add_transactions_from_estatements(estatements_dir, csv_file):
                 date, amount = date_amount.rsplit('$', 1)
                 date_formatted = format_date(date.strip())
                 amount = amount.strip()
-                trans = Transaction(date_formatted, file, page, amount)
+                category = prompt_category()
+                subcategory = category  # For now, category and subcategory are the same
+                trans = Transaction(date_formatted, file, page, amount, category, subcategory)
                 adder.add_transaction(trans)
-                print(f"Added: {transaction_details}")
+                print(f"Added: {transaction_details} under category {category} and subcategory {subcategory}")
             else:
                 print(f"Failed to parse transaction details: {transaction_details}")
 
