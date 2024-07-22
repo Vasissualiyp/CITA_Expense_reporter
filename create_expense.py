@@ -13,6 +13,7 @@ from PyPDF2 import PdfReader, PdfWriter, PdfMerger
 from python.add_transactions import add_transactions_from_estatements
 from python.insert_into_pdf import insert_into_pdf
 from python.censor_transactions import censor_transactions_mainloop
+from python.custom_transactions import process_transactions_custom
 
 class ScriptState:
     def __init__(self):
@@ -154,6 +155,10 @@ def censor_single_transaction(state, output_dir, python_dir):
     image_name = "1-1"
     image_name_full = image_name + ".jpg"
     image_path = os.path.join(creditcard_out_dir, image_name_full)
+    print("Keep in mind that censor_transactions_mainloop now only accepts pdfs!")
+    print("Current implementation that we have here uses jpgs.") 
+    print("You will have to edit the source to change this.")
+    sys.exit(1)
     censor_transactions_mainloop(image_path)
 
     for file in os.listdir(creditcard_out_dir):
@@ -211,195 +216,6 @@ def process_transactions_cosmolunch(state, year, args, mode, final_report_filena
             run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, signed_reimbursement_form_path)
             i += 1
             print("\n")
-
-#----------------------------------------------
-
-def process_transactions_custom(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path):
-    # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
-    csv_filename = 'selected_transactions.csv'
-    combined_creditcards_filename = 'combined_creditcards.pdf'
-    csv_file = os.path.join(args.estatements_directory, csv_filename)
-    add_transactions_from_estatements(args.estatements_directory, csv_file)
-
-    # Step 2: Get unique file+page pairs from CSV
-    unique_pairs = get_unique_file_page_pairs(csv_file)
-
-    # Step 3: Copy unique pairs to creditcards directory
-    output_dir = create_output_directory(args.expense_reports_directory)
-    creditcards_dir = os.path.join(output_dir, 'creditcards')
-    os.makedirs(creditcards_dir, exist_ok=True)
-    copy_unique_pairs_to_directory(unique_pairs, creditcards_dir)
-
-    # Step 4: User interaction for uncensoring transactions
-    transactions = read_transactions_from_csv(csv_file)
-    transactions_to_uncensor = get_transactions_to_uncensor(transactions)
-    #convert_pdfs_to_jpegs(creditcards_dir, 300)
-    #run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
-    clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, combined_creditcards_filename)
-
-    # Step 5: Generate list of files to include
-    all_files = get_all_files_recursively(output_dir)
-    selected_files = user_select_and_order_files(all_files)
-
-    # Step 6: Create reimbursement form
-    create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path)
-
-    # Step 7: Combine selected files into final report
-    combine_selected_files(selected_files, output_dir, final_report_filename)
-
-def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name, debug=False):
-    # Get the absolute path of the directory
-    abs_directory = os.path.abspath(directory)
-    if debug:
-        print(f"Absolute path of the directory: {abs_directory}")
-        print(f"Directory exists before changing: {os.path.exists(abs_directory)}")
-    
-    # Change to the specified directory
-    os.chdir(abs_directory)
-    if debug:
-        print(f'We are in directory {os.getcwd()} now')
-    
-    # Verify the directory path again
-        print(f"Directory exists after changing: {os.path.exists(abs_directory)}")
-    
-    # Step 1: Remove non-censored files
-    for filename in os.listdir('.'):
-        if debug:
-            print(f'File found in directory: {filename}')
-        if os.path.isfile(filename) and 'censored' not in filename:
-            os.remove(filename)
-            if debug:
-                print(f"Removed: {filename}")
-    
-    ## Step 2: Convert .jpg files to .pdf
-    #for filename in os.listdir('.'):
-    #    if filename.lower().endswith('.jpg'):
-    #        image_path = filename
-    #        pdf_path = image_path.rsplit('.', 1)[0] + '.pdf'
-    #        with Image.open(image_path) as img:
-    #            img.convert('RGB').save(pdf_path)
-    #        os.remove(image_path)
-    #        print(f"Converted {filename} to PDF and removed the original .jpg file.")
-    
-    # Step 3: Combine all .pdf files into a single PDF using PdfWriter
-    writer = PdfWriter()
-    for filename in sorted(os.listdir('.')):
-        if filename.lower().endswith('.pdf'):
-            file_path = os.path.join('.', filename)
-            reader = PdfReader(file_path)
-            for page in reader.pages:
-                writer.add_page(page)
-            if debug:
-                print(f"Added {filename} to the writer.")
-
-    output_path = os.path.join(abs_directory, output_pdf_name)
-    with open(output_path, 'wb') as output_file:
-        writer.write(output_file)
-    if debug: 
-        print(f"Combined PDF saved to: {output_path}")
-
-    # Step 4: Remove censored files
-    for filename in os.listdir('.'):
-        if os.path.isfile(filename) and 'censored' in filename:
-            os.remove(filename)
-            if debug:
-                print(f"Removed: {filename}")
-    
-    print(f"All PDFs combined into {output_pdf_name}")
-
-def get_unique_file_page_pairs(csv_filename):
-    unique_pairs = set()
-    with open(csv_filename, 'r') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            unique_pairs.add((row['file'], row['page']))
-    return unique_pairs
-
-def create_output_directory(expense_reports_directory):
-    output_dir = os.path.join(expense_reports_directory)
-    os.makedirs(output_dir, exist_ok=True)
-    return output_dir
-
-def copy_unique_pairs_to_directory(unique_pairs, target_dir):
-    for file_path, page_num in unique_pairs:
-        pdf_reader = PdfReader(file_path)
-        pdf_writer = PdfWriter()
-        pdf_writer.add_page(pdf_reader.pages[int(page_num) - 1])
-        output_filename = f"{os.path.basename(file_path)}_{page_num}.pdf"
-        with open(os.path.join(target_dir, output_filename), "wb") as output_pdf:
-            pdf_writer.write(output_pdf)
-
-def read_transactions_from_csv(csv_filename):
-    transactions = []
-    with open(csv_filename, 'r') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            transactions.append(row)
-    return transactions
-
-def get_transactions_to_uncensor(transactions):
-    #print("Select transactions to uncensor:")
-    #for i, transaction in enumerate(transactions):
-    #    print(f"[{i}] {transaction['date']}: ${transaction['amount']}")
-    #selections = input("Enter the numbers of transactions to uncensor (comma-separated): ")
-    #return [transactions[int(i)] for i in selections.split(',')]
-    return transactions
-
-def run_transaction_censorer(creditcards_dir, transactions_to_uncensor):
-    # Group transactions by file and page
-    grouped_transactions = defaultdict(list)
-    for transaction in transactions_to_uncensor:
-        key = (transaction['file'], transaction['page'])
-        grouped_transactions[key].append(transaction)
-
-    # Iterate over each group and call the censor_transactions_mainloop function
-    for (file, page), transactions in grouped_transactions.items():
-        # Construct the PDF path
-        pdf_name = f"{os.path.basename(file)}_{page}.pdf"
-        pdf_path = os.path.join(creditcards_dir, pdf_name)
-
-        # Display the transactions to the user
-        print(f"Please uncensor the following transactions from {file} page {page}:")
-        for transaction in transactions:
-            print(f"- Date: {transaction['date']}, Amount: ${transaction['amount']}")
-
-        # Call the censor_transactions_mainloop function
-        censor_transactions_mainloop(pdf_path)
-
-def get_all_files_recursively(directory):
-    all_files = []
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith('.pdf'):
-                all_files.append(os.path.join(root, file))
-    return all_files
-
-def user_select_and_order_files(all_files):
-    print("Available files:")
-    for i, file in enumerate(all_files):
-        print(f"[{i}] {file}")
-    
-    # Pseudocode: Open vim for user to edit and reorder files
-    # selected_files = open_vim_for_user_to_edit(all_files)
-    
-    # For now, we'll use a simple input method
-    selections = input("Enter the numbers of files to include (comma-separated): ")
-    selected_files = [all_files[int(i)] for i in selections.split(',')]
-    return selected_files
-
-def combine_selected_files(selected_files, output_dir, final_report_filename):
-    pdf_writer = PdfWriter()
-    for file in selected_files:
-        pdf_reader = PdfReader(file)
-        for page in pdf_reader.pages:
-            pdf_writer.add_page(page)
-    
-    output_path = os.path.join(output_dir, final_report_filename)
-    with open(output_path, "wb") as output_pdf:
-        pdf_writer.write(output_pdf)
-    print(f"Combined PDF saved to: {output_path}")
-
-#----------------------------------------------
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Process PDF documents for expense reports.")
