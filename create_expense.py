@@ -3,12 +3,13 @@ import csv
 import sys
 import subprocess
 import argparse
+from collections import defaultdict
 from datetime import datetime
 from pdf2image import convert_from_path
 from PIL import Image
 import shutil
 import re
-from PyPDF2 import PdfReader, PdfWriter
+from PyPDF2 import PdfReader, PdfWriter, PdfMerger
 from python.add_transactions import add_transactions_from_estatements
 from python.insert_into_pdf import insert_into_pdf
 from python.censor_transactions import censor_transactions_mainloop
@@ -232,7 +233,7 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     # Step 4: User interaction for uncensoring transactions
     transactions = read_transactions_from_csv(csv_file)
     transactions_to_uncensor = get_transactions_to_uncensor(transactions)
-    convert_pdfs_to_jpegs(creditcards_dir, 300)
+    #convert_pdfs_to_jpegs(creditcards_dir, 300)
     run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
     clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, combined_creditcards_filename)
 
@@ -247,28 +248,38 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     combine_selected_files(selected_files, output_dir, final_report_filename)
 
 def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name):
+    # Get the absolute path of the directory
+    abs_directory = os.path.abspath(directory)
+    print(f"Absolute path of the directory: {abs_directory}")
+    print(f"Directory exists before changing: {os.path.exists(abs_directory)}")
+    
     # Change to the specified directory
-    os.chdir(directory)
+    os.chdir(abs_directory)
+    print(f'We are in directory {os.getcwd()} now')
+    
+    # Verify the directory path again
+    print(f"Directory exists after changing: {os.path.exists(abs_directory)}")
     
     # Step 1: Remove non-censored files
-    for filename in os.listdir(directory):
+    for filename in os.listdir('.'):
+        print(f'File found in directory: {filename}')
         if os.path.isfile(filename) and 'censored' not in filename:
             os.remove(filename)
             print(f"Removed: {filename}")
     
-    # Step 2: Convert .jpg files to .pdf
-    for filename in os.listdir(directory):
-        if filename.lower().endswith('.jpg'):
-            image_path = filename
-            pdf_path = image_path.rsplit('.', 1)[0] + '.pdf'
-            with Image.open(image_path) as img:
-                img.convert('RGB').save(pdf_path)
-            os.remove(image_path)
-            print(f"Converted {filename} to PDF and removed the original .jpg file.")
+    ## Step 2: Convert .jpg files to .pdf
+    #for filename in os.listdir('.'):
+    #    if filename.lower().endswith('.jpg'):
+    #        image_path = filename
+    #        pdf_path = image_path.rsplit('.', 1)[0] + '.pdf'
+    #        with Image.open(image_path) as img:
+    #            img.convert('RGB').save(pdf_path)
+    #        os.remove(image_path)
+    #        print(f"Converted {filename} to PDF and removed the original .jpg file.")
     
     # Step 3: Combine all .pdf files into a single PDF
     merger = PdfMerger()
-    for filename in sorted(os.listdir(directory)):
+    for filename in sorted(os.listdir('.')):
         if filename.lower().endswith('.pdf'):
             merger.append(filename)
             print(f"Added {filename} to the merger.")
@@ -276,11 +287,11 @@ def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name):
     merger.write(output_pdf_name)
     merger.close()
 
-    # Step 4: Remove censored files
-    for filename in os.listdir(directory):
-        if os.path.isfile(filename) and 'censored' in filename:
-            os.remove(filename)
-            print(f"Removed: {filename}")
+    ## Step 4: Remove censored files
+    #for filename in os.listdir('.'):
+    #    if os.path.isfile(filename) and 'censored' in filename:
+    #        os.remove(filename)
+    #        print(f"Removed: {filename}")
     
     print(f"All PDFs combined into {output_pdf_name}")
 
@@ -323,11 +334,25 @@ def get_transactions_to_uncensor(transactions):
     return transactions
 
 def run_transaction_censorer(creditcards_dir, transactions_to_uncensor):
+    # Group transactions by file and page
+    grouped_transactions = defaultdict(list)
     for transaction in transactions_to_uncensor:
-        image_name = f"{os.path.basename(transaction['file'])}_{transaction['page']}-1.jpg"
-        image_path = os.path.join(creditcards_dir, image_name)
-        print(f"Please uncensor the transaction from {transaction['date']} for ${transaction['amount']}")
-        censor_transactions_mainloop(image_path)
+        key = (transaction['file'], transaction['page'])
+        grouped_transactions[key].append(transaction)
+
+    # Iterate over each group and call the censor_transactions_mainloop function
+    for (file, page), transactions in grouped_transactions.items():
+        # Construct the PDF path
+        pdf_name = f"{os.path.basename(file)}_{page}.pdf"
+        pdf_path = os.path.join(creditcards_dir, pdf_name)
+
+        # Display the transactions to the user
+        print(f"Please uncensor the following transactions from {file} page {page}:")
+        for transaction in transactions:
+            print(f"- Date: {transaction['date']}, Amount: ${transaction['amount']}")
+
+        # Call the censor_transactions_mainloop function
+        censor_transactions_mainloop(pdf_path)
 
 def get_all_files_recursively(directory):
     all_files = []
