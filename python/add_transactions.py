@@ -13,7 +13,19 @@ class Transaction:
         self.amount = amount
 
     def to_csv_row(self):
-        return [self.date, self.filepath, self.page, self.amount]
+        return {
+            'date': self.date,
+            'file': self.filepath,
+            'page': self.page,
+            'amount': self.amount
+        }
+    @property
+    def month(self):
+        return datetime.strptime(self.date, "%m-%d").strftime("%m")
+
+    @property
+    def day(self):
+        return datetime.strptime(self.date, "%m-%d").strftime("%d")
 
 class TransactionFinder:
     def __init__(self, estatements_dir):
@@ -108,9 +120,20 @@ class TransactionAdder:
         self.csv_file = csv_file
 
     def add_transaction(self, transaction):
+        file_exists = os.path.isfile(self.csv_file)
         with open(self.csv_file, 'a', newline='') as file:
-            writer = csv.writer(file)
+            writer = csv.DictWriter(file, fieldnames=['date', 'file', 'page', 'amount'])
+            if not file_exists:
+                writer.writeheader()  # Write the header only if the file doesn't exist
             writer.writerow(transaction.to_csv_row())
+
+def get_unique_file_page_pairs(csv_filename):
+    unique_pairs = set()
+    with open(csv_filename, 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            unique_pairs.add((row['file'], row['page']))
+    return unique_pairs
 
 def format_date(date_str):
     date = datetime.strptime(date_str, "%b %d")

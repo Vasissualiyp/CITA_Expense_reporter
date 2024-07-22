@@ -1,4 +1,5 @@
 import os
+import csv
 import sys
 import subprocess
 import argparse
@@ -276,7 +277,7 @@ def read_transactions_from_csv(csv_filename):
 def get_transactions_to_uncensor(transactions):
     print("Select transactions to uncensor:")
     for i, transaction in enumerate(transactions):
-        print(f"[{i}] {transaction['month']}-{transaction['day']}: ${transaction['amount']}")
+        print(f"[{i}] {transaction['date']}: ${transaction['amount']}")
     selections = input("Enter the numbers of transactions to uncensor (comma-separated): ")
     return [transactions[int(i)] for i in selections.split(',')]
 
@@ -284,7 +285,7 @@ def run_transaction_censorer(creditcards_dir, transactions_to_uncensor):
     for transaction in transactions_to_uncensor:
         image_name = f"{os.path.basename(transaction['file'])}_{transaction['page']}-1.jpg"
         image_path = os.path.join(creditcards_dir, image_name)
-        print(f"Please uncensor the transaction from {transaction['month']}-{transaction['day']} for ${transaction['amount']}")
+        print(f"Please uncensor the transaction from {transaction['date']} for ${transaction['amount']}")
         censor_transactions_mainloop(image_path)
 
 def get_all_files_recursively(directory):
