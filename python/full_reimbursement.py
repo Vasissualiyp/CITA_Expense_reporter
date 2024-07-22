@@ -1,4 +1,5 @@
 import sys
+import csv
 
 # Define the mapping of categories to row numbers
 category_to_row = {
@@ -125,7 +126,41 @@ class OtherExpenses:
         
         return pdf_array
 
-def main_spending(table_params, font, size):
+def fill_expenses_from_csv(table_params, font, size, csv_file):
+    def get_sum_for_subcategory(subcategory, csv_data):
+        return sum(float(row['amount']) for row in csv_data if int(row['subcategory']) == subcategory)
+
+    # Load CSV data
+    csv_data = []
+    with open(csv_file, 'r') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            csv_data.append(row)
+
+    # Define categories
+    categories = define_categories(table_params)
+    
+    # Fill in the values from the CSV data
+    for category in categories:
+        for subcategory in category.options:
+            subcategory_number = category_to_row[subcategory]
+            total_amount = get_sum_for_subcategory(subcategory_number, csv_data)
+            if total_amount > 0:
+                category.selected_options[subcategory] = total_amount
+
+    # Generate the PDF array
+    pdf_array = []
+    for category in categories:
+        pdf_array.extend(category.get_pdf_array(font, size))
+    
+    other_expenses = OtherExpenses(table_params)
+    # You might want to handle other expenses differently if they are not in the CSV
+    pdf_array.extend(other_expenses.get_pdf_array(font, size))
+    
+    return pdf_array
+
+
+def manual_spending_insert(table_params, font, size):
     
     categories = define_categories(table_params)
 

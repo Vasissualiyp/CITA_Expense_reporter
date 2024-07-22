@@ -13,9 +13,10 @@ from PyPDF2 import PdfReader, PdfWriter, PdfMerger
 from python.add_transactions import add_transactions_from_estatements
 from python.insert_into_pdf import insert_into_pdf
 from python.censor_transactions import censor_transactions_mainloop
+from python.insert_into_pdf import create_reimbursement_form
 #from create_expense import create_reimbursement_form
 
-def process_transactions_custom(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path):
+def process_transactions_custom(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path, config_file):
     print("We are doing custom transactions now")
     # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
     csv_filename = 'selected_transactions.csv'
@@ -53,9 +54,12 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     #selected_files = user_select_and_order_files(all_files)
 
     # Step 6: Create reimbursement form
-    create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path)
+    create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path, 
+                              config_file, csv_file)
 
     # Step 7: Combine selected files into final report
+    print("Now just have to combine the files")
+    sys.exit(0)
     combine_selected_files(selected_files, output_dir, final_report_filename)
 
 def list_pdf_files(directory):
@@ -98,6 +102,7 @@ def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name, debug=
         print(f"Directory exists before changing: {os.path.exists(abs_directory)}")
     
     # Change to the specified directory
+    script_dir=os.getcwd()
     os.chdir(abs_directory)
     if debug:
         print(f'We are in directory {os.getcwd()} now')
@@ -139,6 +144,8 @@ def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name, debug=
                 print(f"Removed: {filename}")
     
     print(f"All PDFs combined into {output_pdf_name}")
+    # Jump back to the script directory not to mess up relative paths
+    os.chdir(script_dir)
 
 def get_unique_file_page_pairs(csv_filename):
     unique_pairs = set()

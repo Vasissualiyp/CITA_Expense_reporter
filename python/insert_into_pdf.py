@@ -1,10 +1,11 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from datetime import datetime
-from python.full_reimbursement import define_table, getrow, generate_texts, main_spending
+from python.full_reimbursement import define_table, getrow, generate_texts, manual_spending_insert, fill_expenses_from_csv
 from python.define_table import define_reimbursement_table
 import PyPDF2
 import io
+import os
 import sys
 import json
 
@@ -82,13 +83,13 @@ def sum_floats_from_pdf_array(pdf_array):
     total_sum_string = '$' + str(total_sum)
     return total_sum_string
 
-def insert_into_pdf(mode, money_spent, date_str, input_file, output_file):
+def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config_file, csv_file):
     
     # Put provided date into a nice format
     date = convert_date_to_string(date_str)
 
     # Read the configuration file
-    config = read_config('config/config.json')
+    config = read_config(config_file)
     
     # Access the configuration values
     student_name = config['student_name']
@@ -100,6 +101,7 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file):
     dept_contact = config['department_contact']
     
     signature_path = "./config/signature.png"
+    signature_path = os.path.abspath(signature_path)
 
     table_params = define_reimbursement_table()
 
@@ -116,15 +118,17 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file):
         (20, 90, signature_path, 30, 6),  # x, y, path, width, height
     ]
 
+    fontsize = 2
     if mode == 'cosmolunch':
         texts = [
-            (140, getrow(29, table_params), money_spent,      font, 2  ),
+            (140, getrow(29, table_params), money_spent,      font, fontsize  ),
         ]
     elif mode == 'test':
         texts = generate_texts(font, table_params) # For testing purposes
-    else:
-        fontsize = 2
-        texts = main_spending(table_params, font, fontsize)
+    elif mode == 'custom':
+        texts = fill_expenses_from_csv(table_params, font, fontsize, csv_file)
+    elif mode == 'manual':
+        texts = manual_spending_insert(table_params, font, fontsize)
 
     money_spent = sum_floats_from_pdf_array(texts)
     # Add total spent
@@ -134,8 +138,15 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file):
     ]
     texts += student_info
     
-    # Example usage
     insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
+
+def create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path, 
+                              config_file, csv_file=None):
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    application_file = os.path.join(output_dir, "application.pdf")
+    insert_into_pdf(mode, state.selected_amount, current_date, signed_reimbursement_form_path, 
+                    application_file, config_file, csv_file)
+    print(f"Saved to: {application_file}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
