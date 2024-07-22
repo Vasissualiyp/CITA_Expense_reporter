@@ -4,6 +4,8 @@ import sys
 import re
 from datetime import datetime, timedelta
 from PyPDF2 import PdfReader
+from python.full_reimbursement import define_categories
+from python.define_table import define_reimbursement_table
 
 class Transaction:
     def __init__(self, date, filepath, page, amount, category=None, subcategory=None):
@@ -154,26 +156,30 @@ def extract_amount(transaction_str):
         return f"${parts[-1]}"
     return ""
 
-def prompt_category():
-    categories = [
-        "Travel within Canada (Economy)", "Travel to USA from Ontario (Economy)", "All other Airfare (Economy)",
-        "Travel within Canada (Above-Economy)", "Travel to USA from Ontario (Above-Economy)", "All other Airfare (Above-Economy)",
-        "ON (13%HST)", "PEI, NS, NF, NB (15%HST)", "All other provinces / territories", "USA / International",
-        "Per Diem: Canada", "Per Diem: USA / International", "KMS x 57 cents/km",
-        "Travel within Canada (Rail/Bus)", "Travel outside Canada (Rail/Bus)", "Travel within or outside Canada (Public Transit)",
-        "ON (13%HST) (Car Rental)", "PEI, NS, NF, NB (15%HST) (Car Rental)", "All other provinces / territories (Car Rental)", "USA / International (Car Rental)",
-        "ON (13%HST) (Meals)", "PEI, NS, NF, NB (15%HST) (Meals)", "All other provinces / territories (Meals)", "USA / International (Meals)",
-        "ON (13%HST) (Taxi)", "PEI, NS, NF, NB (15%HST) (Taxi)", "All other provinces / territories (Taxi)", "USA / International (Taxi)"
-    ]
+def prompt_category(table_params):
+    categories = define_categories(table_params)
+    
     print("\nPlease select a category:")
     for i, category in enumerate(categories, 1):
-        print(f"{i}. {category}")
-    selection = int(input("Enter the category number: ")) - 1
-    return categories[selection]
+        print(f"{i}. {category.name}")
+    category_selection = int(input("Enter the category number: ")) - 1
+    
+    selected_category = categories[category_selection]
+    
+    print(f"\nPlease select a subcategory for {selected_category.name}:")
+    for i, option in enumerate(selected_category.options, 1):
+        print(f"{i}. {option}")
+    subcategory_selection = int(input("Enter the subcategory number: ")) - 1
+    
+    selected_subcategory = selected_category.options[subcategory_selection]
+    
+    return selected_category.name, selected_subcategory
 
 def add_transactions_from_estatements(estatements_dir, csv_file):
     finder = TransactionFinder(estatements_dir)
     adder = TransactionAdder(csv_file)
+
+    table_params = define_reimbursement_table()
 
     while True:
         search_term = input("Enter a transaction posting date (MM-DD) or a search string, or 'q' to quit: ")
@@ -203,14 +209,15 @@ def add_transactions_from_estatements(estatements_dir, csv_file):
                 date, amount = date_amount.rsplit('$', 1)
                 date_formatted = format_date(date.strip())
                 amount = amount.strip()
-                category = prompt_category()
-                subcategory = category  # For now, category and subcategory are the same
+                
+                category, subcategory = prompt_category(table_params)
+                
                 trans = Transaction(date_formatted, file, page, amount, category, subcategory)
                 adder.add_transaction(trans)
                 print(f"Added: {transaction_details} under category {category} and subcategory {subcategory}")
             else:
                 print(f"Failed to parse transaction details: {transaction_details}")
-
+        
     print("Transaction adding complete. Goodbye!")
 
 if __name__ == "__main__":

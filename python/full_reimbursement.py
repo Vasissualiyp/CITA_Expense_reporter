@@ -32,7 +32,7 @@ category_to_row = {
     "USA / International (Taxi)": 28
 }
 
-def define_categories():
+def define_categories(table_params):
     categories = [
         ExpenseCategory("AIRFARE: ECONOMY", ["Travel within Canada (Economy)", "Travel to USA from Ontario (Economy)", "All other Airfare (Economy)"], table_params),
         ExpenseCategory("AIRFARE: ABOVE-ECONOMY", ["Travel within Canada (Above-Economy)", "Travel to USA from Ontario (Above-Economy)", "All other Airfare (Above-Economy)"], table_params),
@@ -127,7 +127,7 @@ class OtherExpenses:
 
 def main_spending(table_params, font, size):
     
-    categories = define_categories()
+    categories = define_categories(table_params)
 
     current_category = 0
     while current_category < len(categories):
