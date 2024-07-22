@@ -146,6 +146,98 @@ def combine_files_to_pdf_with_exceptions(directory, output_filename):
         logging.error(f"An error occurred: {str(e)}")
         sys.exit(1)
 
+#--------------------------
+
+def create_combined_pdf(output_dir, ordering_and_descriptions_file, descriptions_file, application_file, transactions_file):
+    # Ensure output directories exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    parameters_dir = os.path.join(output_dir, "parameters")
+    if not os.path.exists(parameters_dir):
+        os.makedirs(parameters_dir)
+    results_dir = os.path.join(output_dir, "../results")
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+    
+    # Initialize paths
+    pdf_ordering_path = os.path.join(parameters_dir, "pdf_ordering.txt")
+    descriptions_file = os.path.join(output_dir, descriptions_file)
+    application_file = os.path.join(output_dir, application_file)
+    transactions_file = os.path.join(output_dir, 'creditcards', transactions_file)
+
+    # Read ordering_and_descriptions_file and split its content
+    with open(ordering_and_descriptions_file, 'r') as file:
+        lines = file.readlines()
+
+    # Separate parts before and after \begin{document}
+    before_document = []
+    after_document = []
+    document_started = False
+    for line in lines:
+        if not document_started:
+            if line.strip().startswith(r"\begin{document}"):
+                document_started = True
+                after_document.append(line)
+            elif not line.strip().startswith('%') and line.strip():
+                before_document.append(line)
+        else:
+            after_document.append(line)
+
+    # Write the before_document content to pdf_ordering.txt, excluding comments and empty lines
+    with open(pdf_ordering_path, 'w') as file:
+        for line in before_document:
+            file.write(line)
+
+    # Write the after_document content to descriptions_file
+    with open(descriptions_file, 'w') as file:
+        for line in after_document:
+            file.write(line)
+
+    # Step 3: Compile the descriptions tex file (pseudocode)
+    # compile_tex(descriptions_file)
+    # Assuming the compilation generates descriptions.pdf in the same directory as descriptions_file
+
+    descriptions_pdf = descriptions_file.replace('.tex', '.pdf')
+
+    # Step 4: Combine the PDF files
+    pdf_writer = PdfWriter()
+
+    # Add descriptions.pdf
+    add_pdf_to_writer(descriptions_pdf, pdf_writer)
+
+    # Add application_file
+    add_pdf_to_writer(application_file, pdf_writer)
+
+    # Add PDF files from pdf_ordering.txt
+    with open(pdf_ordering_path, 'r') as file:
+        for line in file:
+            pdf_path = line.strip()
+            if pdf_path.lower().endswith('.pdf'):
+                add_pdf_to_writer(os.path.join(output_dir, pdf_path), pdf_writer)
+
+    # Add transactions_file
+    add_pdf_to_writer(transactions_file, pdf_writer)
+
+    # Save the resulting combined file
+    output_pdf_name = os.path.basename(os.path.normpath(output_dir)) + ".pdf"
+    output_pdf_path = os.path.join(results_dir, output_pdf_name)
+
+    with open(output_pdf_path, 'wb') as output_file:
+        pdf_writer.write(output_file)
+
+    print(f"Combined PDF saved to: {output_pdf_path}")
+
+def add_pdf_to_writer(pdf_path, pdf_writer):
+    try:
+        pdf_reader = PdfReader(pdf_path)
+        for page in pdf_reader.pages:
+            pdf_writer.add_page(page)
+        print(f"Added {pdf_path} to the writer.")
+    except Exception as e:
+        print(f"Error adding {pdf_path}: {e}")
+
+#--------------------------
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python combine_files_to_pdf.py <directory> <output_filename>")

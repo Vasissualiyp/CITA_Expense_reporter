@@ -14,6 +14,7 @@ from python.add_transactions import add_transactions_from_estatements
 from python.insert_into_pdf import insert_into_pdf
 from python.censor_transactions import censor_transactions_mainloop
 from python.insert_into_pdf import create_reimbursement_form
+from python.combine_docs import create_combined_pdf
 #from create_expense import create_reimbursement_form
 
 def process_transactions_custom(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path, config_file):
@@ -43,11 +44,12 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
 
     # Edit the files ordering in editor of choice
     editor = 'vim'
-    output_file = 'pdfs_order.tex'
+    ordering_and_descriptions_file = 'pdfs_order.tex'
     descriptions_file = 'description.tex'
+    application_file = 'application.pdf'
     pdf_files = list_pdf_files(output_dir)
-    write_pdf_list_to_file(pdf_files, output_dir, descriptions_file, output_file)
-    open_file_in_editor(editor, output_file)
+    write_pdf_list_to_file(pdf_files, output_dir, descriptions_file, ordering_and_descriptions_file)
+    open_file_in_editor(editor, ordering_and_descriptions_file)
 
     # Step 5: Generate list of files to include
     #all_files = get_all_files_recursively(output_dir)
@@ -59,8 +61,8 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
 
     # Step 7: Combine selected files into final report
     print("Now just have to combine the files")
-    sys.exit(0)
-    combine_selected_files(selected_files, output_dir, final_report_filename)
+    create_combined_pdf(output_dir, ordering_and_descriptions_file, descriptions_file, application_file, 
+                        combined_creditcards_filename)
 
 def list_pdf_files(directory):
     # Check if directory exists
