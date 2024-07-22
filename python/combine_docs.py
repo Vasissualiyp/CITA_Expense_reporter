@@ -164,6 +164,9 @@ def create_combined_pdf(output_dir, ordering_and_descriptions_file, descriptions
     descriptions_file = os.path.join(output_dir, descriptions_file)
     application_file = os.path.join(output_dir, application_file)
     transactions_file = os.path.join(output_dir, 'creditcards', transactions_file)
+    # Paths for the final document
+    output_pdf_name = os.path.basename(os.path.normpath(output_dir)) + ".pdf"
+    output_pdf_path = os.path.join(results_dir, output_pdf_name)
 
     # Read ordering_and_descriptions_file and split its content
     with open(ordering_and_descriptions_file, 'r') as file:
@@ -219,9 +222,7 @@ def create_combined_pdf(output_dir, ordering_and_descriptions_file, descriptions
     add_pdf_to_writer(transactions_file, pdf_writer)
 
     # Save the resulting combined file
-    output_pdf_name = os.path.basename(os.path.normpath(output_dir)) + ".pdf"
-    output_pdf_path = os.path.join(results_dir, output_pdf_name)
-
+    os.remove(output_pdf_path) # Avoid duplicates
     with open(output_pdf_path, 'wb') as output_file:
         pdf_writer.write(output_file)
 
