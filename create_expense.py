@@ -315,11 +315,12 @@ def read_transactions_from_csv(csv_filename):
     return transactions
 
 def get_transactions_to_uncensor(transactions):
-    print("Select transactions to uncensor:")
-    for i, transaction in enumerate(transactions):
-        print(f"[{i}] {transaction['date']}: ${transaction['amount']}")
-    selections = input("Enter the numbers of transactions to uncensor (comma-separated): ")
-    return [transactions[int(i)] for i in selections.split(',')]
+    #print("Select transactions to uncensor:")
+    #for i, transaction in enumerate(transactions):
+    #    print(f"[{i}] {transaction['date']}: ${transaction['amount']}")
+    #selections = input("Enter the numbers of transactions to uncensor (comma-separated): ")
+    #return [transactions[int(i)] for i in selections.split(',')]
+    return transactions
 
 def run_transaction_censorer(creditcards_dir, transactions_to_uncensor):
     for transaction in transactions_to_uncensor:
