@@ -215,7 +215,9 @@ def process_transactions_cosmolunch(state, year, args, mode, final_report_filena
 
 def process_transactions_custom(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path):
     # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
-    csv_file = 'selected_transactions.csv'
+    csv_filename = 'selected_transactions.csv'
+    combined_creditcards_filename = 'combined_creditcards.pdf'
+    csv_file = os.path.join(args.estatements_directory, csv_filename)
     add_transactions_from_estatements(args.estatements_directory, csv_file)
 
     # Step 2: Get unique file+page pairs from CSV
@@ -230,7 +232,9 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     # Step 4: User interaction for uncensoring transactions
     transactions = read_transactions_from_csv(csv_file)
     transactions_to_uncensor = get_transactions_to_uncensor(transactions)
+    convert_pdfs_to_jpegs(creditcards_dir, 300)
     run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
+    clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, combined_creditcards_filename)
 
     # Step 5: Generate list of files to include
     all_files = get_all_files_recursively(output_dir)
@@ -242,6 +246,43 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     # Step 7: Combine selected files into final report
     combine_selected_files(selected_files, output_dir, final_report_filename)
 
+def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name):
+    # Change to the specified directory
+    os.chdir(directory)
+    
+    # Step 1: Remove non-censored files
+    for filename in os.listdir(directory):
+        if os.path.isfile(filename) and 'censored' not in filename:
+            os.remove(filename)
+            print(f"Removed: {filename}")
+    
+    # Step 2: Convert .jpg files to .pdf
+    for filename in os.listdir(directory):
+        if filename.lower().endswith('.jpg'):
+            image_path = filename
+            pdf_path = image_path.rsplit('.', 1)[0] + '.pdf'
+            with Image.open(image_path) as img:
+                img.convert('RGB').save(pdf_path)
+            os.remove(image_path)
+            print(f"Converted {filename} to PDF and removed the original .jpg file.")
+    
+    # Step 3: Combine all .pdf files into a single PDF
+    merger = PdfMerger()
+    for filename in sorted(os.listdir(directory)):
+        if filename.lower().endswith('.pdf'):
+            merger.append(filename)
+            print(f"Added {filename} to the merger.")
+
+    merger.write(output_pdf_name)
+    merger.close()
+
+    # Step 4: Remove censored files
+    for filename in os.listdir(directory):
+        if os.path.isfile(filename) and 'censored' in filename:
+            os.remove(filename)
+            print(f"Removed: {filename}")
+    
+    print(f"All PDFs combined into {output_pdf_name}")
 
 def get_unique_file_page_pairs(csv_filename):
     unique_pairs = set()
@@ -252,8 +293,7 @@ def get_unique_file_page_pairs(csv_filename):
     return unique_pairs
 
 def create_output_directory(expense_reports_directory):
-    current_date = datetime.now().strftime("%Y-%m-%d")
-    output_dir = os.path.join(expense_reports_directory, current_date)
+    output_dir = os.path.join(expense_reports_directory)
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
 

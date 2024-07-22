@@ -28,8 +28,9 @@ class Transaction:
         return datetime.strptime(self.date, "%m-%d").strftime("%d")
 
 class TransactionFinder:
-    def __init__(self, estatements_dir):
+    def __init__(self, estatements_dir, debug = False):
         self.estatements_dir = estatements_dir
+        self.debug = debug
 
     def find_transactions(self, search_term):
         transactions = []
@@ -52,12 +53,15 @@ class TransactionFinder:
             for file in files:
                 if file.endswith('.pdf'):
                     file_path = os.path.join(root, file)
-                    print(f"Scanning file: {file_path}", file=sys.stderr)
+                    if debug:
+                        print(f"Scanning file: {file_path}", file=sys.stderr)
                     file_transactions = self._scan_pdf(file_path, search_terms)
                     transactions.extend(file_transactions)
-                    print(f"Found {len(file_transactions)} transactions in this file", file=sys.stderr)
+                    if debug:
+                        print(f"Found {len(file_transactions)} transactions in this file", file=sys.stderr)
 
-        print(f"Total transactions found: {len(transactions)}", file=sys.stderr)
+        if debug:
+            print(f"Total transactions found: {len(transactions)}", file=sys.stderr)
         return transactions
 
     def _scan_pdf(self, file_path, search_terms):
