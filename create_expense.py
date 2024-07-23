@@ -219,8 +219,9 @@ def process_transactions_cosmolunch(state, args, mode, signed_reimbursement_form
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Process PDF documents for expense reports.")
     parser.add_argument("estatements_directory", help="Directory containing eStatements PDFs")
-    parser.add_argument("search_string", help="String to search for in PDFs")
     parser.add_argument("expense_reports_directory", help="Directory for expense reports")
+    parser.add_argument("mode", help="Program mode")
+    parser.add_argument("search_string", help="String to search for in PDFs")
     parser.add_argument("--autoloop", action="store_true", help="Enable autoloop mode")
     args = parser.parse_args()
     args.estatements_directory = os.path.abspath(args.estatements_directory)

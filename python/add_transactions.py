@@ -48,10 +48,12 @@ class TransactionFinder:
                 target_date.strftime("%b %d").upper(),
                 (target_date + timedelta(days=1)).strftime("%b %d").upper()
             ]
-            print(f"Searching for dates: {date_range}", file=sys.stderr)
+            if self.debug:
+                print(f"Searching for dates: {date_range}", file=sys.stderr)
             search_terms = date_range
         else:
-            print(f"Searching for string: {search_term}", file=sys.stderr)
+            if self.debug:
+                print(f"Searching for string: {search_term}", file=sys.stderr)
             search_terms = [search_term.upper()]
 
         for root, _, files in os.walk(self.estatements_dir):
@@ -78,13 +80,16 @@ class TransactionFinder:
                 lines = text.split('\n')
                 for i, line in enumerate(lines):
                     if any(term in line.upper() for term in search_terms):
-                        print(f"Found matching term in line: {line}", file=sys.stderr)
+                        if self.debug:
+                            print(f"Found matching term in line: {line}", file=sys.stderr)
                         transaction = self._parse_transaction(lines, i)
                         if transaction:
                             transactions.append((file_path, page_num, transaction))
-                            print(f"Added transaction: {transaction}", file=sys.stderr)
+                            if self.debug:
+                                print(f"Added transaction: {transaction}", file=sys.stderr)
                         else:
-                            print(f"Failed to parse transaction from line: {line}", file=sys.stderr)
+                            if self.debug:
+                                print(f"Failed to parse transaction from line: {line}", file=sys.stderr)
         except Exception as e:
             print(f"Error processing {file_path}: {str(e)}", file=sys.stderr)
         return transactions
@@ -98,16 +103,17 @@ class TransactionFinder:
             i += 1
             transaction += ' ' + lines[i].strip()
 
-        print("This is the transaction string:")
-        print(transaction)
-
-        print(f"Parsing transaction: {transaction}", file=sys.stderr)
+        if self.debug:
+            print("This is the transaction string:")
+            print(transaction)
+            print(f"Parsing transaction: {transaction}", file=sys.stderr)
 
         # Extract date
         date_match = re.search(r'\b([A-Z]{3})\s+(\d{2})\b', transaction)
         if date_match:
             date = f"{date_match.group(1)} {date_match.group(2)}"
-            print(f"Found date: {date}", file=sys.stderr)
+            if self.debug:
+                print(f"Found date: {date}", file=sys.stderr)
         else:
             print("Failed to extract date", file=sys.stderr)
             return None
@@ -117,7 +123,8 @@ class TransactionFinder:
         if amount_match:
             full_amount = amount_match.group(1)
             amount = full_amount.split('$')[-1]
-            print(f"Found amount: ${amount}", file=sys.stderr)
+            if self.debug:
+                print(f"Found amount: ${amount}", file=sys.stderr)
         else:
             print("Failed to extract amount", file=sys.stderr)
             return None

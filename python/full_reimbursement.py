@@ -30,7 +30,8 @@ category_to_row = {
     "ON (13%HST) (Taxi)": 25,
     "PEI, NS, NF, NB (15%HST) (Taxi)": 26,
     "All other provinces / territories (Taxi)": 27,
-    "USA / International (Taxi)": 28
+    "USA / International (Taxi)": 28,
+    "OTHER": 99
 }
 
 def define_categories(table_params):

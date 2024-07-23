@@ -27,7 +27,6 @@ def process_transactions_custom(state, args, mode, signed_reimbursement_form_pat
     year = state.year
     tmpfiles = TmpFiles()
 
-    print("We are doing custom transactions now")
     # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
     csv_filename = 'selected_transactions.csv'
     csv_file = os.path.join(args.expense_reports_directory, csv_filename)
@@ -36,7 +35,7 @@ def process_transactions_custom(state, args, mode, signed_reimbursement_form_pat
     # Step 2: Get unique file+page pairs from CSV
     unique_pairs = get_unique_file_page_pairs(csv_file)
 
-    # Step 3: Copy unique pairs to creditcards directory
+    # Step 3: Copy unique pairs (file+page) to creditcards directory
     output_dir = create_output_directory(args.expense_reports_directory)
     output_dir = os.path.abspath(output_dir)
     creditcards_dir = os.path.join(output_dir, 'creditcards')
@@ -60,7 +59,6 @@ def process_transactions_custom(state, args, mode, signed_reimbursement_form_pat
                               config_file, csv_file)
 
     # Step 7: Combine selected files into final report
-    print("Now just have to combine the files")
     create_combined_pdf(output_dir, tmpfiles)
 
 def list_pdf_files(directory, exclude_files=None):
