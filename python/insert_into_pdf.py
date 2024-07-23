@@ -102,6 +102,12 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
     student_address = config['student_address']
     personnel_number = config['personnel_number']
     dept_contact = config['department_contact']
+    department = config['department']
+    dept_telephone = config['dept_telephone']
+    dept_fax = config['dept_fax']
+    student_title = config['claimant_title']
+    approver_name = config['authorized_approver_name']
+    approver_title = config['authorized_approver_title']
     
     signature_path = "./config/signature.png"
     signature_path = os.path.abspath(signature_path)
@@ -114,9 +120,18 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
         (reimb_table_col[1], row(1 ), student_initials, font, fontsizes[1]),
         (reimb_table_col[0], row(1 ), student_lastname, font, fontsizes[1]),
         (reimb_table_col[0], row(3.5),student_address,  font, fontsizes[0]),
-        (reimb_table_col[0], row(27), student_name,     font, fontsizes[1]),
+        (reimb_table_col[0], row(26.8), student_name,     font, fontsizes[1]),
         (reimb_table_col[0], row(10), dept_contact,     font, fontsizes[1]),
-        (reimb_table_col[0], row(18), date,             font, fontsizes[1]),
+        (reimb_table_col[0], row(17), date,             font, fontsizes[1]),
+    ]
+    other_info = [ 
+        #x,                  y,       string,           font, size
+        (reimb_table_col[0], row(13), department,       font, fontsizes[0]),
+        (reimb_table_col[0], row(15), dept_telephone,   font, fontsizes[1]),
+        (reimb_table_col[1], row(15), dept_fax,         font, fontsizes[1]),
+        (reimb_table_col[1], row(26.8), student_title,    font, fontsizes[1]),
+        (reimb_table_col[0], row(36), approver_name,    font, fontsizes[0]),
+        (reimb_table_col[1], row(36), approver_title,   font, fontsizes[1]),
     ]
     images = [
         (reimb_table_col[0], row(25), signature_path, 30, 6),  # x, y, path, width, height
@@ -130,6 +145,7 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
         texts = generate_texts(font, table_params) # For testing purposes
     elif mode == 'custom':
         texts = fill_expenses_from_csv(table_params, font, fontsizes[0], reimb_table_col[2], reimb_table_col[3], csv_file)
+        texts+= other_info
     elif mode == 'manual':
         texts = manual_spending_insert(table_params, font, fontsizes[0] )
 
