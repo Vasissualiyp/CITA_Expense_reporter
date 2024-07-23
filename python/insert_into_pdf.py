@@ -68,11 +68,12 @@ def convert_date_to_string(date_str):
     
     return formatted_date
 
-def sum_floats_from_pdf_array(pdf_array):
+def sum_floats_from_pdf_array(pdf_array, x_transaction):
     total_sum = 0.0
+    print(pdf_array)
     for item in pdf_array:
         x, y, value, font, size = item
-        if x == 140:
+        if x == x_transaction:
             print("success")
             try:
                 value_float = float(value.replace('$', '').replace(',', ''))
@@ -108,6 +109,7 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
     student_title = config['claimant_title']
     approver_name = config['authorized_approver_name']
     approver_title = config['authorized_approver_title']
+    currency = config['currency']
     
     signature_path = "./config/signature.png"
     signature_path = os.path.abspath(signature_path)
@@ -129,12 +131,23 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
         (reimb_table_col[0], row(13), department,       font, fontsizes[0]),
         (reimb_table_col[0], row(15), dept_telephone,   font, fontsizes[1]),
         (reimb_table_col[1], row(15), dept_fax,         font, fontsizes[1]),
-        (reimb_table_col[1], row(26.8), student_title,    font, fontsizes[1]),
+        (reimb_table_col[1], row(26.8),student_title,   font, fontsizes[1]),
         (reimb_table_col[0], row(36), approver_name,    font, fontsizes[0]),
         (reimb_table_col[1], row(36), approver_title,   font, fontsizes[1]),
     ]
     images = [
         (reimb_table_col[0], row(25), signature_path, 30, 6),  # x, y, path, width, height
+    ]
+
+    if currency == 'CAD':
+        currency_row = -6.6
+    elif currency == 'USD':
+        currency_row = -5.6
+    else:
+        currency_row = -4.6
+
+    currency = [
+        (reimb_table_col[3]*0.82, row(currency_row), 'X', font, fontsizes[1]),  # x, y, path, width, height
     ]
 
     if mode == 'cosmolunch':
@@ -149,13 +162,14 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
     elif mode == 'manual':
         texts = manual_spending_insert(table_params, font, fontsizes[0] )
 
-    money_spent = sum_floats_from_pdf_array(texts)
+    money_spent = sum_floats_from_pdf_array(texts, reimb_table_col[3])
     # Add total spent
     texts += [
         (reimb_table_col[3], row(35), money_spent, font, fontsizes[0] ),
         (reimb_table_col[3], row(37), money_spent, font, fontsizes[0] )
     ]
     texts += student_info
+    texts += currency
     
     insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
 
