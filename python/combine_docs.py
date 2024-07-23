@@ -219,9 +219,11 @@ def create_combined_pdf(output_dir, tmpfiles):
         if not document_started:
             if line.strip().startswith(r"%Latex Begin"):
                 document_started = True
-                after_document.append(line)
             elif not line.strip().startswith('%') and line.strip():
                 before_document.append(line)
+            else:
+                if line.strip() and not line.strip().startswith(r"%Latex Begin"):
+                    after_document.append(line)
         else:
             after_document.append(line)
 
