@@ -17,7 +17,8 @@ from python.insert_into_pdf import create_reimbursement_form
 from python.combine_docs import create_combined_pdf
 #from create_expense import create_reimbursement_form
 
-def process_transactions_custom(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path, config_file):
+def process_transactions_custom(state, args, mode, signed_reimbursement_form_path, config_file):
+    year = state.year
     print("We are doing custom transactions now")
     # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
     csv_filename = 'selected_transactions.csv'
@@ -38,25 +39,24 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     # Step 4: User interaction for uncensoring transactions
     transactions = read_transactions_from_csv(csv_file)
     transactions_to_uncensor = get_transactions_to_uncensor(transactions)
-    #convert_pdfs_to_jpegs(creditcards_dir, 300)
-    #run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
+    run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
     clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, combined_creditcards_filename)
 
+    # Step 5: Generate list of files to include
     # Edit the files ordering in editor of choice
     editor = 'vim'
     ordering_and_descriptions_file = 'pdfs_order.tex'
     descriptions_file = 'description.tex'
     application_file = 'application.pdf'
-    pdf_files = list_pdf_files(output_dir)
+    pdf_files = list_pdf_files(output_dir, exclude_files = [ application_file ])
     write_pdf_list_to_file(pdf_files, output_dir, descriptions_file, ordering_and_descriptions_file)
     open_file_in_editor(editor, ordering_and_descriptions_file)
 
-    # Step 5: Generate list of files to include
     #all_files = get_all_files_recursively(output_dir)
     #selected_files = user_select_and_order_files(all_files)
 
     # Step 6: Create reimbursement form
-    create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path, 
+    create_reimbursement_form(state, mode, output_dir, signed_reimbursement_form_path, 
                               config_file, csv_file)
 
     # Step 7: Combine selected files into final report
@@ -64,7 +64,7 @@ def process_transactions_custom(state, year, args, mode, final_report_filename, 
     create_combined_pdf(output_dir, ordering_and_descriptions_file, descriptions_file, application_file, 
                         combined_creditcards_filename)
 
-def list_pdf_files(directory):
+def list_pdf_files(directory, exclude_files=None):
     # Check if directory exists
     if not os.path.exists(directory):
         raise FileNotFoundError(f"Directory does not exist: {directory}")
@@ -72,8 +72,14 @@ def list_pdf_files(directory):
     # Get the list of all files in the specified directory
     all_files = os.listdir(directory)
 
-    # Filter the list to include only .pdf files and remove the directory path
-    pdf_files = [file for file in all_files if file.lower().endswith('.pdf')]
+    # If exclude_files is not provided, use an empty list
+    exclude_files = exclude_files or []
+
+    # Convert the exclude_files to lowercase for case-insensitive comparison
+    exclude_files_lower = [file.lower() for file in exclude_files]
+
+    # Filter the list to include only .pdf files that are not in exclude_files
+    pdf_files = [file for file in all_files if file.lower().endswith('.pdf') and file.lower() not in exclude_files_lower]
 
     return pdf_files
 
@@ -207,36 +213,3 @@ def run_transaction_censorer(creditcards_dir, transactions_to_uncensor):
 
         # Call the censor_transactions_mainloop function
         censor_transactions_mainloop(pdf_path)
-
-def get_all_files_recursively(directory):
-    all_files = []
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith('.pdf'):
-                all_files.append(os.path.join(root, file))
-    return all_files
-
-def user_select_and_order_files(all_files):
-    print("Available files:")
-    for i, file in enumerate(all_files):
-        print(f"[{i}] {file}")
-    
-    # Pseudocode: Open vim for user to edit and reorder files
-    # selected_files = open_vim_for_user_to_edit(all_files)
-    
-    # For now, we'll use a simple input method
-    selections = input("Enter the numbers of files to include (comma-separated): ")
-    selected_files = [all_files[int(i)] for i in selections.split(',')]
-    return selected_files
-
-def combine_selected_files(selected_files, output_dir, final_report_filename):
-    pdf_writer = PdfWriter()
-    for file in selected_files:
-        pdf_reader = PdfReader(file)
-        for page in pdf_reader.pages:
-            pdf_writer.add_page(page)
-    
-    output_path = os.path.join(output_dir, final_report_filename)
-    with open(output_path, "wb") as output_pdf:
-        pdf_writer.write(output_pdf)
-    print(f"Combined PDF saved to: {output_path}")

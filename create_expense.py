@@ -24,6 +24,8 @@ class ScriptState:
         self.selected_month = ""
         self.selected_day = ""
         self.selected_amount = ""
+        self.final_report_filename = ""
+        self.year = "2024"
 
 def check_dependencies():
     try:
@@ -134,7 +136,7 @@ def convert_pdfs_to_jpegs(output_dir, quality):
                 image.save(os.path.join(output_dir, f"{base_name}-{i+1}.jpg"), 'JPEG')
             os.remove(pdf_path)
 
-def censor_single_transaction(state, output_dir, python_dir):
+def censor_single_transaction(state, output_dir):
     """
     Runs the transactions censorer for a single transaction
     """
@@ -165,7 +167,7 @@ def censor_single_transaction(state, output_dir, python_dir):
         if file.endswith((".pdf", ".jpg")) and not file.startswith(image_name):
             os.remove(os.path.join(creditcard_out_dir, file))
 
-def combine_pdfs(output_dir, filename, python_dir):
+def combine_pdfs(output_dir, filename):
     tmp_dir = "tmpbin"
     os.makedirs(tmp_dir, exist_ok=True)
     os.chdir(tmp_dir)
@@ -178,13 +180,15 @@ def combine_pdfs(output_dir, filename, python_dir):
     os.chdir("..")
     shutil.rmtree(tmp_dir)
 
-def run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, 
+def run_python_scripts(state, mode, output_dir, final_report_filename, 
                        signed_reimbursement_form_path, config_file):
-    censor_single_transaction(state, output_dir, python_dir)
-    create_reimbursement_form(state, mode, output_dir, python_dir, signed_reimbursement_form_path, config_file)
-    combine_pdfs(output_dir, final_report_filename, python_dir)
+    censor_single_transaction(state, output_dir)
+    create_reimbursement_form(state, mode, output_dir, signed_reimbursement_form_path, config_file)
+    combine_pdfs(output_dir, final_report_filename)
 
-def process_transactions_cosmolunch(state, year, args, mode, final_report_filename, python_dir, signed_reimbursement_form_path, config_file):
+def process_transactions_cosmolunch(state, args, mode, signed_reimbursement_form_path, config_file):
+    year = state.year
+    final_report_filename = state.final_report_filename 
     if not args.autoloop:
         prompt_user_selection(state)
         extract_date_info(state)
@@ -194,7 +198,7 @@ def process_transactions_cosmolunch(state, year, args, mode, final_report_filena
         closest_date = find_first_date_after(year, state.selected_month, state.selected_day, args.expense_reports_directory)
         print(f"Date of cosmolunch: {closest_date}")
         output_dir = os.path.join(args.expense_reports_directory, closest_date)
-        run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, signed_reimbursement_form_path, config_file)
+        run_python_scripts(state, mode, output_dir, final_report_filename, signed_reimbursement_form_path, config_file)
     else:
         i = 0
         while True:
@@ -208,7 +212,7 @@ def process_transactions_cosmolunch(state, year, args, mode, final_report_filena
             closest_date = find_first_date_after(year, state.selected_month, state.selected_day, args.expense_reports_directory)
             print(f"Date of cosmolunch: {closest_date}")
             output_dir = os.path.join(args.expense_reports_directory, closest_date)
-            run_python_scripts(state, mode, output_dir, final_report_filename, python_dir, signed_reimbursement_form_path, config_file)
+            run_python_scripts(state, mode, output_dir, final_report_filename, signed_reimbursement_form_path, config_file)
             i += 1
             print("\n")
 
@@ -231,9 +235,8 @@ def create_expense_main():
     
     state = ScriptState()
 
-    year = "2024"  # You might want to make this configurable
-    final_report_filename = "combined_application.pdf"
-    python_dir = os.path.join(os.getcwd(), "python")
+    state.year = "2024"  # You might want to make this configurable
+    state.final_report_filename = "combined_application.pdf"
     signed_reimbursement_form_path = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
     config_file = './config/config.json'
     config_file = os.path.abspath(config_file)
@@ -246,13 +249,12 @@ def create_expense_main():
         print("Cosmolunch mode")
         scan_pdfs(state, args.estatements_directory, args.search_string)
         present_results(state, args.search_string)
-        process_transactions_cosmolunch(state, year, args, mode, final_report_filename, 
-                                        python_dir, signed_reimbursement_form_path, config_file)
+        process_transactions_cosmolunch(state, args, mode,
+                                        signed_reimbursement_form_path, config_file)
     elif mode == "custom": # Enter transactions from the receipts, and generate the report based on the eStatements
         print("Custom mode")
-        process_transactions_custom(state, year, args, mode, final_report_filename, 
-                                        python_dir, signed_reimbursement_form_path, config_file)
-
+        process_transactions_custom(state, args, mode, 
+                                    signed_reimbursement_form_path, config_file)
 
 if __name__ == "__main__":
     create_expense_main()
