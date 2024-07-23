@@ -140,11 +140,15 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
     
     insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
 
-def create_reimbursement_form(state, mode, output_dir, signed_reimbursement_form_path, 
-                              config_file, csv_file=None):
+def create_reimbursement_form(state, mode, output_dir, config_file, csv_file=None):
+    if mode == 'custom':
+        reimbursement_form_path = state.unsigned_reimbursement_form_path
+    else:
+        reimbursement_form_path = state.signed_reimbursement_form_path
+
     current_date = datetime.now().strftime("%Y-%m-%d")
     application_file = os.path.join(output_dir, "application.pdf")
-    insert_into_pdf(mode, state.selected_amount, current_date, signed_reimbursement_form_path, 
+    insert_into_pdf(mode, state.selected_amount, current_date, reimbursement_form_path, 
                     application_file, config_file, csv_file)
     print(f"Saved to: {application_file}")
 

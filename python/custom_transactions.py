@@ -10,7 +10,7 @@ from PIL import Image
 import shutil
 import re
 from PyPDF2 import PdfReader, PdfWriter, PdfMerger
-from python.add_transactions import add_transactions_from_estatements
+from python.add_transactions import add_transactions_from_estatements, open_file_in_editor
 from python.insert_into_pdf import insert_into_pdf
 from python.censor_transactions import censor_transactions_mainloop
 from python.insert_into_pdf import create_reimbursement_form
@@ -20,17 +20,21 @@ class TmpFiles:
     def __init__(self):
         self.ordering_and_descriptions_file = 'pdfs_order.tex' 
         self.descriptions_file = 'description.tex'
+        self.descriptions_file_pdf = self._convert_to_pdf(self.descriptions_file)
         self.application_file = 'application.pdf'
         self.combined_creditcards_filename = 'combined_creditcards.pdf'
 
-def process_transactions_custom(state, args, mode, signed_reimbursement_form_path, config_file):
+    def _convert_to_pdf(self, tex_file):
+        return tex_file.replace('.tex', '.pdf')
+
+def process_transactions_custom(state, args, mode, config_file):
     year = state.year
     tmpfiles = TmpFiles()
 
     # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
     csv_filename = 'selected_transactions.csv'
     csv_file = os.path.join(args.expense_reports_directory, csv_filename)
-    add_transactions_from_estatements(args.estatements_directory, csv_file)
+    add_transactions_from_estatements(state, args.estatements_directory, csv_file)
 
     # Step 2: Get unique file+page pairs from CSV
     unique_pairs = get_unique_file_page_pairs(csv_file)
@@ -45,18 +49,18 @@ def process_transactions_custom(state, args, mode, signed_reimbursement_form_pat
     # Step 4: User interaction for uncensoring transactions
     transactions = read_transactions_from_csv(csv_file)
     transactions_to_uncensor = get_transactions_to_uncensor(transactions)
-    run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
-    clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, tmpfiles.combined_creditcards_filename)
+    run_censorer = ask_to_censor_when_file_is_present(creditcards_dir, tmpfiles)
+    if run_censorer:
+        run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
+        clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, tmpfiles.combined_creditcards_filename)
 
     # Step 5: Edit the ordering of files to include in the editor of choice
-    editor = 'vim'
-    pdf_files = list_pdf_files(output_dir, exclude_files = [ tmpfiles.application_file ])
+    pdf_files = list_pdf_files(output_dir, exclude_files = [ tmpfiles.descriptions_file_pdf, tmpfiles.application_file ])
     write_pdf_list_to_file(pdf_files, output_dir, tmpfiles)
-    open_file_in_editor(editor, tmpfiles.ordering_and_descriptions_file)
+    open_file_in_editor(state, tmpfiles.ordering_and_descriptions_file)
 
     # Step 6: Create reimbursement form
-    create_reimbursement_form(state, mode, output_dir, signed_reimbursement_form_path, 
-                              config_file, csv_file)
+    create_reimbursement_form(state, mode, output_dir, config_file, csv_file)
 
     # Step 7: Combine selected files into final report
     create_combined_pdf(output_dir, tmpfiles)
@@ -97,9 +101,6 @@ def write_pdf_list_to_file(pdf_files, output_dir, tmpfiles):
             f.write(latex_f.read())
     
     print(f"List of PDF files and LaTeX content written to {output_file}")
-
-def open_file_in_editor(editor, file_path):
-    subprocess.run([editor, file_path])
 
 def clean_and_combine_pdfs_in_creditcards_dir(directory, output_pdf_name, debug=False):
     # Get the absolute path of the directory
@@ -191,6 +192,20 @@ def get_transactions_to_uncensor(transactions):
     #selections = input("Enter the numbers of transactions to uncensor (comma-separated): ")
     #return [transactions[int(i)] for i in selections.split(',')]
     return transactions
+
+def ask_to_censor_when_file_is_present(creditcards_dir, tmpfiles):
+    """Checks if the censored transactions file exists and asks the user if they want to overwrite it"""
+    run_censorer = True
+    full_path = os.path.join( creditcards_dir, tmpfiles.combined_creditcards_filename)
+    if os.path.exists(full_path):
+        response = input("Censored transactions file was found. Would you like to use it (y) or redo censoring (n)? Default: y. ")
+        if not response:
+            response = 'y'
+        if response.lower() == 'y':
+            run_censorer = False
+    return run_censorer
+
+
 
 def run_transaction_censorer(creditcards_dir, transactions_to_uncensor):
     # Group transactions by file and page

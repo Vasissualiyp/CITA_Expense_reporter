@@ -26,6 +26,9 @@ class ScriptState:
         self.selected_amount = ""
         self.final_report_filename = ""
         self.year = "2024"
+        self.editor = "vim"
+        self.signed_reimbursement_form_path = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
+        self.unsigned_reimbursement_form_path = "/home/vasilii/Documents/Expenses/Expense_form_empty.pdf"
 
 def check_dependencies():
     try:
@@ -181,14 +184,15 @@ def combine_pdfs(output_dir, filename):
     shutil.rmtree(tmp_dir)
 
 def run_python_scripts(state, mode, output_dir, final_report_filename, 
-                       signed_reimbursement_form_path, config_file):
+                       reimbursement_form_path, config_file):
     censor_single_transaction(state, output_dir)
-    create_reimbursement_form(state, mode, output_dir, signed_reimbursement_form_path, config_file)
+    create_reimbursement_form(state, mode, output_dir, reimbursement_form_path, config_file)
     combine_pdfs(output_dir, final_report_filename)
 
-def process_transactions_cosmolunch(state, args, mode, signed_reimbursement_form_path, config_file):
+def process_transactions_cosmolunch(state, args, mode, config_file):
     year = state.year
     final_report_filename = state.final_report_filename 
+    reimbursement_form_path = state.signed_reimbursement_form_path
     if not args.autoloop:
         prompt_user_selection(state)
         extract_date_info(state)
@@ -198,7 +202,7 @@ def process_transactions_cosmolunch(state, args, mode, signed_reimbursement_form
         closest_date = find_first_date_after(year, state.selected_month, state.selected_day, args.expense_reports_directory)
         print(f"Date of cosmolunch: {closest_date}")
         output_dir = os.path.join(args.expense_reports_directory, closest_date)
-        run_python_scripts(state, mode, output_dir, final_report_filename, signed_reimbursement_form_path, config_file)
+        run_python_scripts(state, mode, output_dir, final_report_filename, reimbursement_form_path, config_file)
     else:
         i = 0
         while True:
@@ -212,7 +216,7 @@ def process_transactions_cosmolunch(state, args, mode, signed_reimbursement_form
             closest_date = find_first_date_after(year, state.selected_month, state.selected_day, args.expense_reports_directory)
             print(f"Date of cosmolunch: {closest_date}")
             output_dir = os.path.join(args.expense_reports_directory, closest_date)
-            run_python_scripts(state, mode, output_dir, final_report_filename, signed_reimbursement_form_path, config_file)
+            run_python_scripts(state, mode, output_dir, final_report_filename, reimbursement_form_path, config_file)
             i += 1
             print("\n")
 
@@ -236,9 +240,7 @@ def create_expense_main():
     
     state = ScriptState()
 
-    state.year = "2024"  # You might want to make this configurable
     state.final_report_filename = "combined_application.pdf"
-    signed_reimbursement_form_path = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
     config_file = './config/config.json'
     config_file = os.path.abspath(config_file)
 
@@ -250,12 +252,10 @@ def create_expense_main():
         print("Cosmolunch mode")
         scan_pdfs(state, args.estatements_directory, args.search_string)
         present_results(state, args.search_string)
-        process_transactions_cosmolunch(state, args, mode,
-                                        signed_reimbursement_form_path, config_file)
+        process_transactions_cosmolunch(state, args, mode, config_file)
     elif mode == "custom": # Enter transactions from the receipts, and generate the report based on the eStatements
         print("Custom mode")
-        process_transactions_custom(state, args, mode, 
-                                    signed_reimbursement_form_path, config_file)
+        process_transactions_custom(state, args, mode, config_file)
 
 if __name__ == "__main__":
     create_expense_main()

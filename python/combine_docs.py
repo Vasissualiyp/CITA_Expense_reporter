@@ -92,7 +92,8 @@ def add_pdf_to_merger(merger, file_path, width, height, rotate=False):
         with open(temp_path, "wb") as temp_file:
             writer.write(temp_file)
         merger.append(temp_path)
-        os.remove(temp_path)
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
         logging.info(f"Successfully added {file_path} to merger")
     except Exception as e:
         logging.error(f"Error processing {file_path}: {str(e)}")
@@ -263,7 +264,8 @@ def create_combined_pdf(output_dir, tmpfiles):
     add_pdf_to_writer(transactions_file, pdf_writer)
 
     # Save the resulting combined file
-    os.remove(output_pdf_path) # Avoid duplicates
+    if os.path.exists(output_pdf_path):
+        os.remove(output_pdf_path) # Avoid duplicates
     with open(output_pdf_path, 'wb') as output_file:
         pdf_writer.write(output_file)
 

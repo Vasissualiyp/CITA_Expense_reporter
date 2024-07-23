@@ -2,6 +2,7 @@ import os
 import csv
 import sys
 import re
+import subprocess
 from datetime import datetime, timedelta
 from PyPDF2 import PdfReader
 from python.full_reimbursement import define_categories, category_to_row
@@ -167,7 +168,13 @@ def prompt_category(table_params):
     print("\nPlease select a category:")
     for i, category in enumerate(categories, 1):
         print(f"{i}. {category.name}")
+    print("0. OTHER")
+    
     category_selection = int(input("Enter the category number: ")) - 1
+    
+    if category_selection == -1:  # User selected 'OTHER'
+        other_category_name = input("Please enter the name of the 'OTHER' category: ")
+        return "OTHER", other_category_name
     
     selected_category = categories[category_selection]
     
@@ -181,7 +188,10 @@ def prompt_category(table_params):
     # Return the subcategory number according to the category_to_row dictionary
     return selected_category.name, category_to_row[selected_subcategory]
 
-def add_transactions_from_estatements(estatements_dir, csv_file):
+def open_file_in_editor(state, file_path):
+    subprocess.run([state.editor, file_path])
+
+def add_transactions_from_estatements(state, estatements_dir, csv_file):
     finder = TransactionFinder(estatements_dir)
     adder = TransactionAdder(csv_file)
 
@@ -191,7 +201,17 @@ def add_transactions_from_estatements(estatements_dir, csv_file):
         print("Existing transactions:")
         with open(csv_file, 'r') as file:
             print(file.read())
-        input("Review the above transactions. Press Enter to continue or make changes before proceeding...")
+        while True:
+            edit_csv = input("Review the above transactions. 'c' to continue or 'e' to make changes...").strip()
+            if not edit_csv:
+                edit_csv = 'c'
+            if edit_csv.lower() == 'e':
+                open_file_in_editor(state, csv_file)
+                break
+            elif edit_csv.lower() == 'c':
+                break
+            else:
+                print("Sorry, your option is not available. Try again with 'c', 'e' or Enter")
 
     while True:
         search_term = input("Enter a transaction posting date (MM-DD) or a search string, or 'c' to continue: ")
@@ -209,9 +229,11 @@ def add_transactions_from_estatements(estatements_dir, csv_file):
         for i, (file, page, transaction) in enumerate(transactions, 1):
             print(f"{i}. {transaction}")
 
-        selections = input("Enter the numbers of transactions to add (comma-separated) or 'a' for all: ")
+        selections = input("Enter the numbers of transactions to add (comma-separated), 'a' for all, or 'q' to cancel: ")
         if selections.lower() == 'a':
             selected_transactions = transactions
+        elif selections.lower() == 'q':
+            continue
         else:
             indices = [int(s.strip()) - 1 for s in selections.split(',')]
             selected_transactions = [transactions[i] for i in indices if 0 <= i < len(transactions)]
@@ -247,4 +269,4 @@ if __name__ == "__main__":
     
     estatements_dir = sys.argv[1]
     csv_file = sys.argv[2]
-    add_transactions_from_estatements(estatements_dir, csv_file)
+    add_transactions_from_estatements(None, estatements_dir, csv_file)

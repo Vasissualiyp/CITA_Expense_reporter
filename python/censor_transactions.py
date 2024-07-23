@@ -415,10 +415,6 @@ class PDFViewer:
         pdf_y = pdf_height - (y / image_height * pdf_height)
         return pdf_x, pdf_y
 
-# This ensures that the PDF coordinates are correctly transformed.
-
-
-
 def censor_transactions_mainloop(image_path):
     root = tk.Tk()
     app = PDFViewer(root, image_path)

@@ -31,7 +31,7 @@ category_to_row = {
     "PEI, NS, NF, NB (15%HST) (Taxi)": 26,
     "All other provinces / territories (Taxi)": 27,
     "USA / International (Taxi)": 28,
-    "OTHER": 99
+    "OTHER": 29
 }
 
 def define_categories(table_params):
@@ -114,6 +114,9 @@ class OtherExpenses:
             self.expenses.append((expense_name, expense_amount))
             count += 1
 
+    def add_expense(self, name, amount):
+        self.expenses.append((name, amount))
+
     def get_pdf_array(self, font, size):
         pdf_array = []
         base_x = 140  # Base x position for the monetary amount
@@ -129,7 +132,7 @@ class OtherExpenses:
 
 def fill_expenses_from_csv(table_params, font, size, csv_file):
     def get_sum_for_subcategory(subcategory, csv_data):
-        summed_expenses = sum(float(row['amount']) for row in csv_data if int(row['subcategory']) == subcategory)
+        summed_expenses = sum(float(row['amount']) for row in csv_data if row['subcategory'] == subcategory)
         formatted_sum = round(summed_expenses, 2)
         return formatted_sum
 
@@ -142,26 +145,36 @@ def fill_expenses_from_csv(table_params, font, size, csv_file):
 
     # Define categories
     categories = define_categories(table_params)
-    
+    other_expenses = OtherExpenses(table_params)
+
     # Fill in the values from the CSV data
     for category in categories:
         for subcategory in category.options:
-            subcategory_number = category_to_row[subcategory]
-            total_amount = get_sum_for_subcategory(subcategory_number, csv_data)
-            if total_amount > 0:
-                category.selected_options[subcategory] = total_amount
+            subcategory_number = category_to_row.get(subcategory)
+            if subcategory_number is not None:
+                total_amount = get_sum_for_subcategory(str(subcategory_number), csv_data)
+                if total_amount > 0:
+                    category.selected_options[subcategory] = total_amount
+
+    # Handle "OTHER" expenses separately
+    for row in csv_data:
+        subcategory = row['subcategory']
+        try:
+            int_subcategory = int(subcategory)
+            if int_subcategory not in category_to_row.values():
+                other_expenses.add_expense(subcategory, row['amount'])
+        except ValueError:
+            other_expenses.add_expense(subcategory, row['amount'])
 
     # Generate the PDF array
     pdf_array = []
     for category in categories:
         pdf_array.extend(category.get_pdf_array(font, size))
-    
-    other_expenses = OtherExpenses(table_params)
-    # You might want to handle other expenses differently if they are not in the CSV
+
+    # Add other expenses to the PDF array
     pdf_array.extend(other_expenses.get_pdf_array(font, size))
     
     return pdf_array
-
 
 def manual_spending_insert(table_params, font, size):
     
