@@ -180,9 +180,17 @@ def add_transactions_from_estatements(estatements_dir, csv_file):
 
     table_params = define_reimbursement_table()
 
+    if os.path.exists(csv_file):
+        print("Existing transactions:")
+        with open(csv_file, 'r') as file:
+            print(file.read())
+        input("Review the above transactions. Press Enter to continue or make changes before proceeding...")
+
     while True:
-        search_term = input("Enter a transaction posting date (MM-DD) or a search string, or 'q' to quit: ")
-        if search_term.lower() == 'q':
+        search_term = input("Enter a transaction posting date (MM-DD) or a search string, or 'c' to continue: ")
+        if not search_term:
+            search_term = 'c'
+        if search_term.lower() == 'c':
             break
 
         transactions = finder.find_transactions(search_term)
@@ -208,7 +216,13 @@ def add_transactions_from_estatements(estatements_dir, csv_file):
                 date, amount = date_amount.rsplit('$', 1)
                 date_formatted = format_date(date.strip())
                 amount = amount.strip()
-                
+
+                change_amount = input(f"Would you like to change the amount for this transaction? (y/N): ")
+                if change_amount.lower() == 'y':
+                    current_amount = f"${amount}"
+                    print(f"Current amount for this transaction is {current_amount}. Please, enter a new amount:")
+                    amount = input("New amount: ").strip()
+
                 _, subcategory_number = prompt_category(table_params)
                 
                 trans = Transaction(date_formatted, file, page, amount, subcategory_number)

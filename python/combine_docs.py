@@ -248,7 +248,6 @@ def create_combined_pdf(output_dir, tmpfiles):
     add_pdf_to_writer(descriptions_pdf, pdf_writer)
 
     # Add application_file
-    #add_pdf_to_writer(application_file, pdf_writer)
     page_width = 612
     page_height = 792
     add_page_to_writer(pdf_writer, application_file, page_width, page_height, rotate=False)
