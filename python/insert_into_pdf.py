@@ -114,7 +114,7 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
     signature_path = "./config/signature.png"
     signature_path = os.path.abspath(signature_path)
 
-    table_params, reimb_table_col, fontsizes = define_reimbursement_table(mode)
+    table_params, reimb_table_col, fontsizes, signature_params = define_reimbursement_table(mode)
 
     student_info = [ 
         #x,                  y,       string,           font, size
@@ -136,7 +136,7 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
         (reimb_table_col[1], row(36), approver_title,   font, fontsizes[1]),
     ]
     images = [
-        (reimb_table_col[0], row(25), signature_path, 30, 6),  # x, y, path, width, height
+        (reimb_table_col[0], row(signature_params[0]), signature_path, signature_params[1], signature_params[2]),  # x, y, path, width, height
     ]
 
     if currency == 'CAD':

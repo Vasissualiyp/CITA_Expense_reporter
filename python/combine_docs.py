@@ -216,22 +216,31 @@ def create_combined_pdf(output_dir, tmpfiles):
     before_document = []
     after_document = []
     document_started = False
+    
     for line in lines:
+        stripped_line = line.strip()
+        
+        # Check for the beginning of the actual LaTeX document
+        if stripped_line.startswith(r"%Latex Begin"):
+            document_started = True
+            # Ensure the before document section ends here, including this line
+            before_document.append(line)
+            continue
+        
+        # Handle lines based on whether the document has started
         if not document_started:
-            if line.strip().startswith(r"%Latex Begin"):
-                document_started = True
-            elif not line.strip().startswith('%') and line.strip():
+            # Exclude full comment lines from the before_document
+            if not stripped_line.startswith('%'):
                 before_document.append(line)
-            else:
-                if line.strip() and not line.strip().startswith(r"%Latex Begin"):
-                    after_document.append(line)
         else:
+            # All lines after the LaTeX document begins are part of after_document
             after_document.append(line)
-
+    
     # Write the before_document content to pdf_ordering.txt, excluding comments and empty lines
     with open(pdf_ordering_path, 'w') as file:
         for line in before_document:
-            file.write(line)
+            if line.strip() and not line.strip().startswith('%'):
+                file.write(line)
 
     # Write the after_document content to descriptions_file
     with open(descriptions_file, 'w') as file:
