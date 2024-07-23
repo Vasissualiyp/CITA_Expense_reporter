@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import subprocess
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 from PIL import Image
 
@@ -148,6 +149,39 @@ def combine_files_to_pdf_with_exceptions(directory, output_filename):
 
 #--------------------------
 
+def compile_tex(tex_path):
+    # Get the directory of the tex file and the base filename
+    tex_dir = os.path.dirname(tex_path)
+    base_name = os.path.basename(tex_path)
+    file_name, _ = os.path.splitext(base_name)
+
+    # Specify the directory for temporary files
+    temp_dir = os.path.join(tex_dir, 'tmpdir')
+    os.makedirs(temp_dir, exist_ok=True)  # Create temp_dir if it doesn't exist
+
+    # Command to compile the TeX document
+    command = [
+        'pdflatex',
+        '-output-directory', temp_dir,  # Output all auxiliary files to temp_dir
+        '-jobname', file_name,          # Ensure the output PDF has the correct name
+        tex_path                        # Path to the .tex source file
+    ]
+
+    # Execute the command
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    # Check if the compilation was successful
+    if result.returncode != 0:
+        print("Error compiling the document:")
+        print(result.stdout)
+        print(result.stderr)
+    else:
+        # Move the PDF back to the original directory if compilation is successful
+        pdf_path = os.path.join(temp_dir, file_name + '.pdf')
+        final_pdf_path = os.path.join(tex_dir, file_name + '.pdf')
+        os.rename(pdf_path, final_pdf_path)
+        print(f"Document compiled successfully. PDF saved to: {final_pdf_path}")
+
 def create_combined_pdf(output_dir, tmpfiles):
     ordering_and_descriptions_file = tmpfiles.ordering_and_descriptions_file
     descriptions_file = tmpfiles.descriptions_file
@@ -160,7 +194,7 @@ def create_combined_pdf(output_dir, tmpfiles):
     parameters_dir = os.path.join(output_dir, "parameters")
     if not os.path.exists(parameters_dir):
         os.makedirs(parameters_dir)
-    results_dir = os.path.join(output_dir, "../results")
+    results_dir = os.path.normpath( os.path.join(output_dir, "../results") )
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
     
@@ -177,13 +211,13 @@ def create_combined_pdf(output_dir, tmpfiles):
     with open(ordering_and_descriptions_file, 'r') as file:
         lines = file.readlines()
 
-    # Separate parts before and after \begin{document}
+    # Separate parts before and after the beginning of the tex file
     before_document = []
     after_document = []
     document_started = False
     for line in lines:
         if not document_started:
-            if line.strip().startswith(r"\begin{document}"):
+            if line.strip().startswith(r"%Latex Begin"):
                 document_started = True
                 after_document.append(line)
             elif not line.strip().startswith('%') and line.strip():
@@ -202,9 +236,7 @@ def create_combined_pdf(output_dir, tmpfiles):
             file.write(line)
 
     # Step 3: Compile the descriptions tex file (pseudocode)
-    # compile_tex(descriptions_file)
-    # Assuming the compilation generates descriptions.pdf in the same directory as descriptions_file
-
+    compile_tex(descriptions_file)
     descriptions_pdf = descriptions_file.replace('.tex', '.pdf')
 
     # Step 4: Combine the PDF files
@@ -214,7 +246,10 @@ def create_combined_pdf(output_dir, tmpfiles):
     add_pdf_to_writer(descriptions_pdf, pdf_writer)
 
     # Add application_file
-    add_pdf_to_writer(application_file, pdf_writer)
+    #add_pdf_to_writer(application_file, pdf_writer)
+    page_width = 612
+    page_height = 792
+    add_page_to_writer(pdf_writer, application_file, page_width, page_height, rotate=False)
 
     # Add PDF files from pdf_ordering.txt
     with open(pdf_ordering_path, 'r') as file:
@@ -232,6 +267,35 @@ def create_combined_pdf(output_dir, tmpfiles):
         pdf_writer.write(output_file)
 
     print(f"Combined PDF saved to: {output_pdf_path}")
+
+def resize_and_rotate_page(page, width, height, rotate):
+    """
+    This function resizes and optionally rotates a PDF page.
+    page: the page to modify
+    width: new width
+    height: new height
+    rotate: if True, rotate the page by 90 degrees
+    """
+    # Set the page size
+    page.mediabox.upper_right = (width, height)
+    
+    # Rotate the page if needed
+    if rotate:
+        page.rotate_clockwise(90)
+
+# Special function that is only used for application file
+def add_page_to_writer(writer, file_path, width, height, rotate=False):
+    logging.info(f"Processing file: {file_path}")
+    try:
+        reader = PdfReader(file_path)
+        for page_num in range(len(reader.pages)):
+            page = reader.pages[page_num]
+            resize_and_rotate_page(page, width, height, rotate)
+            writer.add_page(page)
+        logging.info(f"Successfully added {file_path} to writer")
+    except Exception as e:
+        logging.error(f"Error processing {file_path}: {str(e)}")
+        raise
 
 def add_pdf_to_writer(pdf_path, pdf_writer):
     try:

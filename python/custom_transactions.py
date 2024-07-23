@@ -49,8 +49,7 @@ def process_transactions_custom(state, args, mode, signed_reimbursement_form_pat
     run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
     clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, tmpfiles.combined_creditcards_filename)
 
-    # Step 5: Generate list of files to include
-    # Edit the files ordering in editor of choice
+    # Step 5: Edit the ordering of files to include in the editor of choice
     editor = 'vim'
     pdf_files = list_pdf_files(output_dir, exclude_files = [ tmpfiles.application_file ])
     write_pdf_list_to_file(pdf_files, output_dir, tmpfiles)
@@ -95,7 +94,7 @@ def write_pdf_list_to_file(pdf_files, output_dir, tmpfiles):
         
         # Write the LaTeX file contents
         f.write(f"\n% Below is the latex file {latex_file}. This will be a document, included at the start of your reimbursement. Add any extra information that you want, change the order of documents as they appear, etc.\n")
-        
+        f.write(f"\n%Latex Begin\n")
         with open(latex_file_path, 'r') as latex_f:
             f.write(latex_f.read())
     
