@@ -268,21 +268,6 @@ def create_combined_pdf(output_dir, tmpfiles):
 
     print(f"Combined PDF saved to: {output_pdf_path}")
 
-def resize_and_rotate_page(page, width, height, rotate):
-    """
-    This function resizes and optionally rotates a PDF page.
-    page: the page to modify
-    width: new width
-    height: new height
-    rotate: if True, rotate the page by 90 degrees
-    """
-    # Set the page size
-    page.mediabox.upper_right = (width, height)
-    
-    # Rotate the page if needed
-    if rotate:
-        page.rotate_clockwise(90)
-
 # Special function that is only used for application file
 def add_page_to_writer(writer, file_path, width, height, rotate=False):
     logging.info(f"Processing file: {file_path}")
