@@ -128,7 +128,9 @@ class OtherExpenses:
 
 def fill_expenses_from_csv(table_params, font, size, csv_file):
     def get_sum_for_subcategory(subcategory, csv_data):
-        return sum(float(row['amount']) for row in csv_data if int(row['subcategory']) == subcategory)
+        summed_expenses = sum(float(row['amount']) for row in csv_data if int(row['subcategory']) == subcategory)
+        formatted_sum = round(summed_expenses, 2)
+        return formatted_sum
 
     # Load CSV data
     csv_data = []
