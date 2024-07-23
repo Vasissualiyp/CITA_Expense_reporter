@@ -47,7 +47,7 @@ def process_transactions_custom(state, args, mode, signed_reimbursement_form_pat
     transactions = read_transactions_from_csv(csv_file)
     transactions_to_uncensor = get_transactions_to_uncensor(transactions)
     run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
-    clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, tmprifles.combined_creditcards_filename)
+    clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, tmpfiles.combined_creditcards_filename)
 
     # Step 5: Generate list of files to include
     # Edit the files ordering in editor of choice
@@ -84,8 +84,8 @@ def list_pdf_files(directory, exclude_files=None):
     return pdf_files
 
 def write_pdf_list_to_file(pdf_files, output_dir, tmpfiles):
-    latex_file = tmpfiles.latex_file
-    output_file = tmpfiles.output_file
+    latex_file = tmpfiles.descriptions_file
+    output_file = tmpfiles.ordering_and_descriptions_file
     latex_file_path = os.path.join(output_dir, latex_file)
     with open(output_file, 'w') as f:
         # Write the PDF files list
