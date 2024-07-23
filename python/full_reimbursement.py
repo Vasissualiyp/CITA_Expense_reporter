@@ -79,10 +79,9 @@ class ExpenseCategory:
             value = input(f"Enter the value for {self.options[index - 1]}: ")
             self.selected_options[self.options[index - 1]] = value
 
-    def get_pdf_array(self, font, size):
+    def get_pdf_array(self, font, size, x):
         pdf_array = []
         for option, value in self.selected_options.items():
-            x = 140  # Assuming a fixed x position for now
             y = getrow(category_to_row[option], self.table_params)
             pdf_array.append((x, y, '$' + str(float(value)), font, size))
         return pdf_array
@@ -117,10 +116,8 @@ class OtherExpenses:
     def add_expense(self, name, amount):
         self.expenses.append((name, amount))
 
-    def get_pdf_array(self, font, size):
+    def get_pdf_array(self, font, size, name_x, base_x):
         pdf_array = []
-        base_x = 140  # Base x position for the monetary amount
-        name_x = 96   # x position for the expense name
         start_row = 29  # Starting row number for other expenses
 
         for index, (name, amount) in enumerate(self.expenses):
@@ -130,7 +127,7 @@ class OtherExpenses:
         
         return pdf_array
 
-def fill_expenses_from_csv(table_params, font, size, csv_file):
+def fill_expenses_from_csv(table_params, font, size, naming_column, value_column, csv_file):
     def get_sum_for_subcategory(subcategory, csv_data):
         summed_expenses = sum(float(row['amount']) for row in csv_data if row['subcategory'] == subcategory)
         formatted_sum = round(summed_expenses, 2)
@@ -169,10 +166,10 @@ def fill_expenses_from_csv(table_params, font, size, csv_file):
     # Generate the PDF array
     pdf_array = []
     for category in categories:
-        pdf_array.extend(category.get_pdf_array(font, size))
+        pdf_array.extend(category.get_pdf_array(font, size, naming_column))
 
     # Add other expenses to the PDF array
-    pdf_array.extend(other_expenses.get_pdf_array(font, size))
+    pdf_array.extend(other_expenses.get_pdf_array(font, size, naming_column, value_column))
     
     return pdf_array
 

@@ -248,7 +248,7 @@ def create_expense_main():
 
     state.mode = args.mode
     #state.mode = "cosmolunch" if "Cosmolunch" in args.expense_reports_directory else "other"
-    state.mode = "test"
+    #state.mode = "test"
     #state.mode = "custom"
 
     if state.mode == "cosmolunch": 

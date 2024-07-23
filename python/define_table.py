@@ -4,12 +4,12 @@ from python.full_reimbursement import define_table
 reimbursement_config = {
     'default': {
         'rows': [(2, 44.5), (10, 69), (19, 94.35), (31, 128), (37, 144.2)],
-        'columns': [20, 51, 140],
+        'columns': [20, 51, 96, 140],
         'font_size': [2, 2.5]
     },
     'custom': {
-        'rows': [(20, 445.0), (100, 690.0), (190, 943.5), (310, 1280.0), (370, 1442.0)],
-        'columns': [30, 200, 560],
+        'rows': [(2, 175), (10, 265), (19, 350), (31, 490), (37, 553)],
+        'columns': [30, 130, 320, 487],
         'font_size': [8, 10]
     }
 }

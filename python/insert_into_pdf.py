@@ -113,7 +113,7 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
         (reimb_table_col[0], row(-1), personnel_number, font, fontsizes[1]),
         (reimb_table_col[1], row(1 ), student_initials, font, fontsizes[1]),
         (reimb_table_col[0], row(1 ), student_lastname, font, fontsizes[1]),
-        (reimb_table_col[0], row(4 ), student_address,  font, fontsizes[0]),
+        (reimb_table_col[0], row(3.5),student_address,  font, fontsizes[0]),
         (reimb_table_col[0], row(27), student_name,     font, fontsizes[1]),
         (reimb_table_col[0], row(10), dept_contact,     font, fontsizes[1]),
         (reimb_table_col[0], row(18), date,             font, fontsizes[1]),
@@ -124,20 +124,20 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
 
     if mode == 'cosmolunch':
         texts = [
-            (reimb_table_col[2], row(29), money_spent, font, fontsizes[0]),
+            (reimb_table_col[3], row(29), money_spent, font, fontsizes[0]),
         ]
     elif mode == 'test':
         texts = generate_texts(font, table_params) # For testing purposes
     elif mode == 'custom':
-        texts = fill_expenses_from_csv(table_params, font, fontsizes[0], csv_file)
+        texts = fill_expenses_from_csv(table_params, font, fontsizes[0], reimb_table_col[2], reimb_table_col[3], csv_file)
     elif mode == 'manual':
         texts = manual_spending_insert(table_params, font, fontsizes[0] )
 
     money_spent = sum_floats_from_pdf_array(texts)
     # Add total spent
     texts += [
-        (reimb_table_col[2], row(35), money_spent, font, fontsizes[0] ),
-        (reimb_table_col[2], row(37), money_spent, font, fontsizes[0] )
+        (reimb_table_col[3], row(35), money_spent, font, fontsizes[0] ),
+        (reimb_table_col[3], row(37), money_spent, font, fontsizes[0] )
     ]
     texts += student_info
     
