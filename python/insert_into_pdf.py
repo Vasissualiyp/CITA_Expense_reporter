@@ -3,6 +3,7 @@ from reportlab.pdfgen import canvas
 from datetime import datetime
 from python.full_reimbursement import define_table, getrow, generate_texts, manual_spending_insert, fill_expenses_from_csv
 from python.define_table import define_reimbursement_table
+from datetime import datetime
 import PyPDF2
 import io
 import os
@@ -84,6 +85,39 @@ def sum_floats_from_pdf_array(pdf_array, x_transaction):
     total_sum_string = '$' + str(total_sum)
     return total_sum_string
 
+def ask_for_travel_dates():
+    def get_date_input(prompt):
+        """ Helper function to get a valid date input from the user. """
+        while True:
+            date_input = input(prompt).strip()
+            if not date_input:
+                return None
+            try:
+                return datetime.strptime(date_input, "%Y-%m-%d")
+            except ValueError:
+                print("Invalid date format. Please use YYYY-MM-DD format.")
+
+    # Ask user for the start date
+    start_date = get_date_input("Enter the start date of your travel (YYYY-MM-DD): ")
+    if start_date is None:
+        return ""
+
+    # Ask user for the end date
+    end_date = get_date_input("Enter the end date of your travel (YYYY-MM-DD): ")
+    if end_date is None:
+        return ""
+
+    # Formatting the date string based on whether the years are the same or different
+    if start_date.year == end_date.year:
+        if start_date.month == end_date.month:
+            date_string = start_date.strftime('%b %d') + ' - ' + end_date.strftime('%d, %Y')
+        else:
+            date_string = start_date.strftime('%b %d') + ' - ' + end_date.strftime('%b %d, %Y')
+    else:
+        date_string = start_date.strftime('%b %d, %Y') + ' - ' + end_date.strftime('%b %d, %Y')
+    
+    return date_string
+
 def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config_file, csv_file):
     
     def row(n):
@@ -116,15 +150,19 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
 
     table_params, reimb_table_col, fontsizes, signature_params = define_reimbursement_table(mode)
 
+    travel_dates = ask_for_travel_dates()
+    travel_dates_col = (reimb_table_col[0] + 2 * reimb_table_col[1])/3
+
     student_info = [ 
         #x,                  y,       string,           font, size
         (reimb_table_col[0], row(-1), personnel_number, font, fontsizes[1]),
         (reimb_table_col[1], row(1 ), student_initials, font, fontsizes[1]),
         (reimb_table_col[0], row(1 ), student_lastname, font, fontsizes[1]),
         (reimb_table_col[0], row(3.5),student_address,  font, fontsizes[0]),
-        (reimb_table_col[0], row(26.8), student_name,     font, fontsizes[1]),
+        (reimb_table_col[0], row(26.8), student_name,   font, fontsizes[1]),
         (reimb_table_col[0], row(10), dept_contact,     font, fontsizes[1]),
         (reimb_table_col[0], row(17), date,             font, fontsizes[1]),
+        (travel_dates_col,   row(-1), travel_dates,     font, fontsizes[0]),
     ]
     other_info = [ 
         #x,                  y,       string,           font, size
