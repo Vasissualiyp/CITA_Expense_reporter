@@ -35,13 +35,21 @@ This project provides a set of scripts and tools to generate expense reports for
 Create a configuration file `config.json` in the `config` directory with the following structure:
 ```json
 {
-    "student_name": "Vasilii Pustovoit",
+    "student_name": "Alice Bob",
     "student_lastname": "Pustovoit",
     "student_initials": "V. P.",
     "font": "Helvetica-Bold",
     "student_address": "Address, City, ON, Canada",
     "personnel_number": "1234567",
-    "department_contact": "Alice Smith"
+    "department_contact": "Carl Smith",
+    "department": "Canadian Institute for Theoretical Astrophysics",
+    "dept_telephone": "123-456-7890",
+    "dept_fax": "123-456-7890",
+    "claimant_title": "student",
+    "authorized_approver_name": "John Doe",
+    "authorized_approver_title": "Professor",
+    "currency": "CAD"
+
 }
 ```
 
