@@ -118,6 +118,41 @@ def ask_for_travel_dates():
     
     return date_string
 
+def split_string(s, max_chars):
+    words = s.split()
+    
+    # Check if any word exceeds the maximum allowed characters
+    if any(len(word) > max_chars for word in words):
+        raise ValueError(f"One or more words are too long to fit within the limit of {max_chars} characters")
+    
+    # Attempt to split the string into two parts without exceeding max_chars
+    first_part = ""
+    second_part = ""
+    
+    for word in words:
+        if len(first_part) + len(word) + (1 if first_part else 0) <= max_chars:
+            first_part += (" " + word if first_part else word)
+        elif len(second_part) + len(word) + (1 if second_part else 0) <= max_chars:
+            second_part += (" " + word if second_part else word)
+        else:
+            raise ValueError("The string is too long to split into two parts.")
+    
+    return first_part.strip(), second_part.strip()
+
+# Example of wrapping this function into user input handling
+def ask_for_purpose(max_chars):
+    while True:
+        user_input = input("Enter a purpose of reimbursement (or type 'exit' to quit): ")
+        if user_input.lower() == 'exit':
+            print("Exiting the program.")
+            break
+        
+        try:
+            part1, part2 = split_string(user_input, max_chars)
+            return part1, part2
+        except ValueError as e:
+            print(f"Error: {e}")
+
 def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config_file, csv_file):
     
     def row(n):
@@ -150,6 +185,8 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
 
     table_params, reimb_table_col, fontsizes, signature_params = define_reimbursement_table(mode)
 
+    purpose1, purpose2 = ask_for_purpose(40)
+
     travel_dates = ask_for_travel_dates()
     travel_dates_col = (reimb_table_col[0] + 2 * reimb_table_col[1])/3
 
@@ -167,6 +204,8 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
     other_info = [ 
         #x,                  y,       string,           font, size
         (reimb_table_col[0], row(13), department,       font, fontsizes[0]),
+        (reimb_table_col[0], row(6.5),purpose1,         font, fontsizes[1]),
+        (reimb_table_col[0], row(7.5),purpose2,         font, fontsizes[1]),
         (reimb_table_col[0], row(15), dept_telephone,   font, fontsizes[1]),
         (reimb_table_col[1], row(15), dept_fax,         font, fontsizes[1]),
         (reimb_table_col[1], row(26.8),student_title,   font, fontsizes[1]),
