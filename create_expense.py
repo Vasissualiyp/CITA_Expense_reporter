@@ -27,6 +27,7 @@ class ScriptState:
         self.final_report_filename = ""
         self.year = "2024"
         self.editor = "vim"
+        self.mode = ""
         self.signed_reimbursement_form_path = "/home/vasilii/Documents/Expenses/2024/Cosmolunch/Reimbursement_form_with_sign.pdf"
         self.unsigned_reimbursement_form_path = "/home/vasilii/Documents/Expenses/Expense_form_empty.pdf"
 
@@ -186,11 +187,12 @@ def combine_pdfs(output_dir, filename):
 def run_python_scripts(state, mode, output_dir, final_report_filename, 
                        reimbursement_form_path, config_file):
     censor_single_transaction(state, output_dir)
-    create_reimbursement_form(state, mode, output_dir, reimbursement_form_path, config_file)
+    create_reimbursement_form(state, output_dir, reimbursement_form_path, config_file)
     combine_pdfs(output_dir, final_report_filename)
 
-def process_transactions_cosmolunch(state, args, mode, config_file):
+def process_transactions_cosmolunch(state, args, config_file):
     year = state.year
+    mode = state.mode
     final_report_filename = state.final_report_filename 
     reimbursement_form_path = state.signed_reimbursement_form_path
     if not args.autoloop:
@@ -244,18 +246,26 @@ def create_expense_main():
     config_file = './config/config.json'
     config_file = os.path.abspath(config_file)
 
-    mode = "cosmolunch" if "Cosmolunch" in args.expense_reports_directory else "other"
-    #mode = "test"
-    mode = "custom"
+    state.mode = args.mode
+    #state.mode = "cosmolunch" if "Cosmolunch" in args.expense_reports_directory else "other"
+    state.mode = "test"
+    #state.mode = "custom"
 
-    if mode == "cosmolunch": 
+    if state.mode == "cosmolunch": 
         print("Cosmolunch mode")
         scan_pdfs(state, args.estatements_directory, args.search_string)
         present_results(state, args.search_string)
-        process_transactions_cosmolunch(state, args, mode, config_file)
-    elif mode == "custom": # Enter transactions from the receipts, and generate the report based on the eStatements
+        process_transactions_cosmolunch(state, args, config_file)
+    elif state.mode == "custom": # Enter transactions from the receipts, and generate the report based on the eStatements
         print("Custom mode")
-        process_transactions_custom(state, args, mode, config_file)
+        process_transactions_custom(state, args, config_file)
+    elif state.mode == "test": 
+        print("Test mode")
+        scan_pdfs(state, args.estatements_directory, args.search_string)
+        present_results(state, args.search_string)
+        process_transactions_cosmolunch(state, args, config_file)
+    else:
+        print("Mode not supported")
 
 if __name__ == "__main__":
     create_expense_main()

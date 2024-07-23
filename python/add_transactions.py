@@ -195,7 +195,7 @@ def add_transactions_from_estatements(state, estatements_dir, csv_file):
     finder = TransactionFinder(estatements_dir)
     adder = TransactionAdder(csv_file)
 
-    table_params = define_reimbursement_table()
+    table_params = define_reimbursement_table(state.mode)
 
     if os.path.exists(csv_file):
         print("Existing transactions:")

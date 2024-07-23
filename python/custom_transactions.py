@@ -27,8 +27,9 @@ class TmpFiles:
     def _convert_to_pdf(self, tex_file):
         return tex_file.replace('.tex', '.pdf')
 
-def process_transactions_custom(state, args, mode, config_file):
+def process_transactions_custom(state, args, config_file):
     year = state.year
+    mode = state.mode
     tmpfiles = TmpFiles()
 
     # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
@@ -60,7 +61,7 @@ def process_transactions_custom(state, args, mode, config_file):
     open_file_in_editor(state, tmpfiles.ordering_and_descriptions_file)
 
     # Step 6: Create reimbursement form
-    create_reimbursement_form(state, mode, output_dir, config_file, csv_file)
+    create_reimbursement_form(state, output_dir, config_file, csv_file)
 
     # Step 7: Combine selected files into final report
     create_combined_pdf(output_dir, tmpfiles)

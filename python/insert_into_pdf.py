@@ -85,6 +85,9 @@ def sum_floats_from_pdf_array(pdf_array):
 
 def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config_file, csv_file):
     
+    def row(n):
+        return getrow(n, table_params)
+
     # Put provided date into a nice format
     date = convert_date_to_string(date_str)
 
@@ -103,44 +106,46 @@ def insert_into_pdf(mode, money_spent, date_str, input_file, output_file, config
     signature_path = "./config/signature.png"
     signature_path = os.path.abspath(signature_path)
 
-    table_params = define_reimbursement_table()
+    table_params, reimb_table_col, fontsizes = define_reimbursement_table(mode)
 
-    student_info = [
-        (20,  38,   personnel_number, font, 2.5), # x, y, string, font, size
-        (51,  44.5, student_initials, font, 2.5),
-        (20,  44.5, student_lastname, font, 2.5),
-        (20,  52,   student_address,  font, 2  ),
-        (20,  116,  student_name,     font, 2.5),
-        (20,  70,   dept_contact,     font, 2.5),
-        (20,  90,   date,             font, 2.5),
+    student_info = [ 
+        #x,                  y,       string,           font, size
+        (reimb_table_col[0], row(-1), personnel_number, font, fontsizes[1]),
+        (reimb_table_col[1], row(1 ), student_initials, font, fontsizes[1]),
+        (reimb_table_col[0], row(1 ), student_lastname, font, fontsizes[1]),
+        (reimb_table_col[0], row(4 ), student_address,  font, fontsizes[0]),
+        (reimb_table_col[0], row(27), student_name,     font, fontsizes[1]),
+        (reimb_table_col[0], row(10), dept_contact,     font, fontsizes[1]),
+        (reimb_table_col[0], row(18), date,             font, fontsizes[1]),
     ]
     images = [
-        (20, 90, signature_path, 30, 6),  # x, y, path, width, height
+        (reimb_table_col[0], row(25), signature_path, 30, 6),  # x, y, path, width, height
     ]
 
-    fontsize = 2
     if mode == 'cosmolunch':
         texts = [
-            (140, getrow(29, table_params), money_spent,      font, fontsize  ),
+            (reimb_table_col[2], row(29), money_spent, font, fontsizes[0]),
         ]
     elif mode == 'test':
         texts = generate_texts(font, table_params) # For testing purposes
     elif mode == 'custom':
-        texts = fill_expenses_from_csv(table_params, font, fontsize, csv_file)
+        texts = fill_expenses_from_csv(table_params, font, fontsizes[0], csv_file)
     elif mode == 'manual':
-        texts = manual_spending_insert(table_params, font, fontsize)
+        texts = manual_spending_insert(table_params, font, fontsizes[0] )
 
     money_spent = sum_floats_from_pdf_array(texts)
     # Add total spent
     texts += [
-        (140, getrow(35, table_params), money_spent,      font, 2  ),
-        (140, getrow(37, table_params), money_spent,      font, 2  )
+        (reimb_table_col[2], row(35), money_spent, font, fontsizes[0] ),
+        (reimb_table_col[2], row(37), money_spent, font, fontsizes[0] )
     ]
     texts += student_info
     
     insert_texts_and_images_to_pdf(input_file, output_file, texts, images)
 
-def create_reimbursement_form(state, mode, output_dir, config_file, csv_file=None):
+def create_reimbursement_form(state, output_dir, config_file, csv_file=None):
+    mode = state.mode 
+
     if mode == 'custom':
         reimbursement_form_path = state.unsigned_reimbursement_form_path
     else:
