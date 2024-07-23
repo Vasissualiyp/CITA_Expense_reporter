@@ -148,7 +148,12 @@ def combine_files_to_pdf_with_exceptions(directory, output_filename):
 
 #--------------------------
 
-def create_combined_pdf(output_dir, ordering_and_descriptions_file, descriptions_file, application_file, transactions_file):
+def create_combined_pdf(output_dir, tmpfiles):
+    ordering_and_descriptions_file = tmpfiles.ordering_and_descriptions_file
+    descriptions_file = tmpfiles.descriptions_file
+    application_file = tmpfiles.application_file
+    transactions_file = tmpfiles.transactions_file
+
     # Ensure output directories exist
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

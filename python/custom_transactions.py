@@ -15,14 +15,21 @@ from python.insert_into_pdf import insert_into_pdf
 from python.censor_transactions import censor_transactions_mainloop
 from python.insert_into_pdf import create_reimbursement_form
 from python.combine_docs import create_combined_pdf
-#from create_expense import create_reimbursement_form
+
+class TmpFiles:
+    def __init__(self):
+        self.ordering_and_descriptions_file = 'pdfs_order.tex' 
+        self.descriptions_file = 'description.tex'
+        self.application_file = 'application.pdf'
+        self.combined_creditcards_filename = 'combined_creditcards.pdf'
 
 def process_transactions_custom(state, args, mode, signed_reimbursement_form_path, config_file):
     year = state.year
+    tmpfiles = TmpFiles()
+
     print("We are doing custom transactions now")
     # Step 1: Use add_transactions_from_estatements to select transactions and save to CSV
     csv_filename = 'selected_transactions.csv'
-    combined_creditcards_filename = 'combined_creditcards.pdf'
     csv_file = os.path.join(args.expense_reports_directory, csv_filename)
     add_transactions_from_estatements(args.estatements_directory, csv_file)
 
@@ -40,20 +47,14 @@ def process_transactions_custom(state, args, mode, signed_reimbursement_form_pat
     transactions = read_transactions_from_csv(csv_file)
     transactions_to_uncensor = get_transactions_to_uncensor(transactions)
     run_transaction_censorer(creditcards_dir, transactions_to_uncensor)
-    clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, combined_creditcards_filename)
+    clean_and_combine_pdfs_in_creditcards_dir(creditcards_dir, tmprifles.combined_creditcards_filename)
 
     # Step 5: Generate list of files to include
     # Edit the files ordering in editor of choice
     editor = 'vim'
-    ordering_and_descriptions_file = 'pdfs_order.tex'
-    descriptions_file = 'description.tex'
-    application_file = 'application.pdf'
-    pdf_files = list_pdf_files(output_dir, exclude_files = [ application_file ])
-    write_pdf_list_to_file(pdf_files, output_dir, descriptions_file, ordering_and_descriptions_file)
-    open_file_in_editor(editor, ordering_and_descriptions_file)
-
-    #all_files = get_all_files_recursively(output_dir)
-    #selected_files = user_select_and_order_files(all_files)
+    pdf_files = list_pdf_files(output_dir, exclude_files = [ tmpfiles.application_file ])
+    write_pdf_list_to_file(pdf_files, output_dir, tmpfiles)
+    open_file_in_editor(editor, tmpfiles.ordering_and_descriptions_file)
 
     # Step 6: Create reimbursement form
     create_reimbursement_form(state, mode, output_dir, signed_reimbursement_form_path, 
@@ -61,8 +62,7 @@ def process_transactions_custom(state, args, mode, signed_reimbursement_form_pat
 
     # Step 7: Combine selected files into final report
     print("Now just have to combine the files")
-    create_combined_pdf(output_dir, ordering_and_descriptions_file, descriptions_file, application_file, 
-                        combined_creditcards_filename)
+    create_combined_pdf(output_dir, tmpfiles)
 
 def list_pdf_files(directory, exclude_files=None):
     # Check if directory exists
@@ -83,7 +83,9 @@ def list_pdf_files(directory, exclude_files=None):
 
     return pdf_files
 
-def write_pdf_list_to_file(pdf_files, output_dir, latex_file, output_file):
+def write_pdf_list_to_file(pdf_files, output_dir, tmpfiles):
+    latex_file = tmpfiles.latex_file
+    output_file = tmpfiles.output_file
     latex_file_path = os.path.join(output_dir, latex_file)
     with open(output_file, 'w') as f:
         # Write the PDF files list
