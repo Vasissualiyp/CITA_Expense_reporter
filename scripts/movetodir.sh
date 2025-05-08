@@ -4,7 +4,7 @@
 
 #workdir='../2024/Cosmolunch'
 workdir="$HOME/Pictures/Office-Lens"
-year=2024
+year=2025
 format="pdf"
 movetodir="$HOME/Documents/Expenses/$year/Cosmolunch"
 
@@ -21,10 +21,11 @@ for file in $files; do
     dir="$movetodir/${month}-${day}"
 
     # Create the directory if it does not exist
-    # mkdir -p "$dir"
+    mkdir -p "$dir"
     
     # Move the file into the corresponding directory
     mv "$file" "$dir/Signup_sheet.$format" || { echo "Directory $dir doesn't exist"; }
+	echo "Moved $file successfully!"
   else
     echo "Filename format unexpected: $file"
   fi

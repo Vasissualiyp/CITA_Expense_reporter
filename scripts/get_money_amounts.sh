@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-year=2024
+# This program opens receipt and allows user to save amount
+# on the receipt to a file amount.txt
+
+year=2025
 workdir="$HOME/Documents/Expenses/$year/Cosmolunch"
 
 dirs=$(find $workdir -type d -name "[0-9][0-9]-[0-9][0-9]")
